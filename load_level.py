@@ -9,7 +9,7 @@ def load_level(filename):
             element = element[1].split()
             pos = (int(element[0]), int(element[1]))
             scale = (int(element[2]), int(element[3]))
-            Platform((pos), (scale))
+            Platform((pos), (scale), element[4])
         if type == 'Background':
             name = element[1]
             Background = pygame.sprite.Sprite()
