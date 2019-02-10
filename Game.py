@@ -59,6 +59,7 @@ class Player(pygame.sprite.Sprite):
         self.moveleft = False
         self.moveright = False
         self.jump = False
+        self.drop = False
         self.gravity_velocity = 0.07 #скорость, с которой растет скорость падения
 
     def players_move(self):
@@ -85,6 +86,9 @@ class Player(pygame.sprite.Sprite):
                 sprite = pygame.sprite.spritecollideany(player, platform_sprites)
                 if player.rect.y - 120 > sprite.rect.y and self.gravity > 0:  # проверяем, что его ноги ниже выше платформы
                     player.rect.x += 2
+        if self.drop:
+            player.rect.y += 2
+            self.drop = False
         if self.gravity >= 0: #если он падает
             self.rect.y += 1
             if not pygame.sprite.spritecollideany(self, platform_sprites):  # если под ним нет поверхности
@@ -137,6 +141,8 @@ while running:
                 player.moveright = True
             if event.key == pygame.K_UP:
                 player.jump = True
+            if event.key == pygame.K_DOWN:
+                player.drop = True
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 player.moveleft = False
