@@ -57,6 +57,48 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = y
         self.gravity = 1
 
+    def players_move(self, moveright, moveleft, jump):
+        if jump:
+            player.rect.y += 1
+            if pygame.sprite.spritecollideany(player, platform_sprites):
+                sprite = pygame.sprite.spritecollideany(player, platform_sprites)
+                if player.rect.y + 120 - sprite.rect.y < 2:  # у нас ноги близки к верхушки платформы
+                    player.gravity = -3.01
+                    player.rect.y -= 1.1
+            player.rect.y -= 1
+        if moveright:
+            player.rect.x += 2
+            player.image = pygame.transform.scale(load_image('playerr.png'), (50, 120))
+            if pygame.sprite.spritecollideany(player, platform_sprites):  # столкновения с платформами/борадми
+                sprite = pygame.sprite.spritecollideany(player, platform_sprites)
+                if player.rect.y - 120 > sprite.rect.y:
+                    player.rect.x -= 2
+        if moveleft:
+            player.rect.x -= 2
+            player.image = pygame.transform.scale(load_image('playerl.png'), (50, 120))  # персонаж направлен влево
+            if pygame.sprite.spritecollideany(player, platform_sprites):  # столкновения с платформами/борадми
+                sprite = pygame.sprite.spritecollideany(player, platform_sprites)
+                if player.rect.y - 120 > sprite.rect.y:  # проверяем, что его ноги ниже выше платформы
+                    player.rect.x += 2
+        player.rect.y += 1
+        if not pygame.sprite.spritecollideany(player, platform_sprites):  # если под ним нет поверхности
+            player.rect.y -= 1
+            player.rect.y += player.gravity
+            player.gravity += 0.07
+            while pygame.sprite.spritecollideany(player, platform_sprites):
+                sprite = pygame.sprite.spritecollideany(player, platform_sprites)
+                if player.rect.y < sprite.rect.y:
+                    player.rect.y -= 1
+                    player.gravity = 0
+                else:
+                    break
+        else:
+            player.rect.y -= 1
+            if player.gravity != 0:
+                player.rect.y += player.gravity
+                player.gravity += 0.07
+
+
 class Platform(pygame.sprite.Sprite):
     def __init__(self, pos, scale, filename):
         base_platform = pygame.sprite.Sprite()
@@ -71,7 +113,7 @@ player = Player(600, 20)
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
-moveleft, moveright = False, False
+moveleft, moveright, jump = False, False, False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -82,50 +124,14 @@ while running:
             if event.key == pygame.K_RIGHT:
                 moveright = True
             if event.key == pygame.K_UP:
-                player.rect.y +=1
-                if pygame.sprite.spritecollideany(player, platform_sprites):
-                    sprite = pygame.sprite.spritecollideany(player, platform_sprites)
-                    if player.rect.y + 120 - sprite.rect.y < 2: # у нас ноги близки к верхушки платформы
-                        player.gravity = -3.01
-                        player.rect.y -= 1.1
-                player.rect.y -= 1
+                jump = True
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 moveleft = False
             if event.key == pygame.K_RIGHT:
                 moveright = False
-    if moveleft:
-        player.rect.x -= 2
-        player.image = pygame.transform.scale(load_image('playerl.png'), (50, 120)) #персонаж направлен влево
-        if pygame.sprite.spritecollideany(player, platform_sprites): #столкновения с платформами/борадми
-            sprite = pygame.sprite.spritecollideany(player, platform_sprites)
-            if player.rect.y - 120  > sprite.rect.y: #проверяем, что его ноги ниже выше платформы
-                player.rect.x += 2
-
-    if moveright:
-        player.rect.x += 2
-        player.image = pygame.transform.scale(load_image('playerr.png'), (50, 120))
-        if pygame.sprite.spritecollideany(player, platform_sprites): #столкновения с платформами/борадми
-            sprite = pygame.sprite.spritecollideany(player, platform_sprites)
-            if player.rect.y - 120 > sprite.rect.y:
-                player.rect.x -= 2
-    player.rect.y += 1
-    if not pygame.sprite.spritecollideany(player, platform_sprites): #если под ним нет поверхности
-        player.rect.y -= 1
-        player.rect.y += player.gravity
-        player.gravity += 0.07
-        while pygame.sprite.spritecollideany(player, platform_sprites):
-            sprite = pygame.sprite.spritecollideany(player, platform_sprites)
-            if player.rect.y < sprite.rect.y:
-                player.rect.y -= 1
-                player.gravity = 0
-            else:
-                break
-    else:
-        player.rect.y -= 1
-        if player.gravity != 0:
-            player.rect.y += player.gravity
-            player.gravity += 0.07
+    player.players_move(moveright, moveleft, jump)
+    jump = False
     level_sprites.draw(screen)
     platform_sprites.draw(screen)
     all_sprites.draw(screen)
