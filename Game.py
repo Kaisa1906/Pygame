@@ -52,7 +52,7 @@ guns_sprites = pygame.sprite.Group()
 class Player(pygame.sprite.Sprite):
     image = load_image("player.png")  # player = персонаж, r = вправо направлен
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, gun):
         super().__init__(all_sprites)  # он у нас тут вроде добавляется в all_sprites
         Player.image = pygame.transform.scale(Player.image, (50, 120))  # сделал, чтобы было не уродливо
         self.image = Player.image
@@ -67,6 +67,18 @@ class Player(pygame.sprite.Sprite):
         self.drop = False
         self.side = 'Right'
         self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
+        if gun == 'Pistol':
+            weapon = Pistol(self)
+            self.weapon = weapon
+        elif gun == 'ak47':
+            weapon = Gun(self)
+            self.weapon = weapon
+        elif gun == 'awp':
+            weapon = Snipe(self)
+            self.weapon = weapon
+        elif gun == 'mp5':
+            weapon = Mp5(self)
+            self.weapon = weapon
 
     def players_move(self):
         if self.jump:
@@ -139,7 +151,7 @@ class Pistol(pygame.sprite.Sprite):
         self.pistol = pygame.sprite.Sprite()
         self.pistol.image = pygame.transform.scale(load_image('guns/pistol.png'), (40, 25))
         self.pistol.rect = self.pistol.image.get_rect()
-        self.pistol.rect.x, self.pistol.rect.y = player.rect.x + 10, player.rect.y + 30
+        self.pistol.rect.x, self.pistol.rect.y = player.rect.x + 35, player.rect.y + 45
         self.player = player
         self.side = 'Right'
         guns_sprites.add(self.pistol)
@@ -149,16 +161,81 @@ class Pistol(pygame.sprite.Sprite):
             if self.side == 'Left':
                 self.pistol.image = pygame.transform.flip(self.pistol.image, True, False)
                 self.side = 'Right'
-            self.pistol.rect.x, self.pistol.rect.y = self.player.rect.x + 25, self.player.rect.y + 50
+            self.pistol.rect.x, self.pistol.rect.y = self.player.rect.x + 35, self.player.rect.y + 45
         elif self.player.side == 'Left':
             if self.side == 'Right':
                 self.pistol.image = pygame.transform.flip(self.pistol.image, True, False)
                 self.side = 'Left'
-            self.pistol.rect.x, self.pistol.rect.y = self.player.rect.x - 10, self.player.rect.y + 50
+            self.pistol.rect.x, self.pistol.rect.y = self.player.rect.x - 25, self.player.rect.y + 45
 
 
-player = Player(600, 20)
-pistol = Pistol(player)
+class Gun(pygame.sprite.Sprite):
+    def __init__(self, player):
+        self.Gun = pygame.sprite.Sprite()
+        self.Gun.image = pygame.transform.scale(load_image('guns/ak47.png'), (80, 30))
+        self.Gun.rect = self.Gun.image.get_rect()
+        self.Gun.rect.x, self.Gun.rect.y = player.rect.x, player.rect.y + 50
+        self.player = player
+        self.side = 'Right'
+        guns_sprites.add(self.Gun)
+
+    def update(self):
+        if self.player.side == 'Right':
+            if self.side == 'Left':
+                self.Gun.image = pygame.transform.flip(self.Gun.image, True, False)
+                self.side = 'Right'
+            self.Gun.rect.x, self.Gun.rect.y = self.player.rect.x, self.player.rect.y + 50
+        elif self.player.side == 'Left':
+            if self.side == 'Right':
+                self.Gun.image = pygame.transform.flip(self.Gun.image, True, False)
+                self.side = 'Left'
+            self.Gun.rect.x, self.Gun.rect.y = self.player.rect.x - 30, self.player.rect.y + 50
+
+class Snipe(pygame.sprite.Sprite):
+    def __init__(self, player):
+        self.Snipe = pygame.sprite.Sprite()
+        self.Snipe.image = pygame.transform.scale(load_image('guns/awp.png'), (125, 25))
+        self.Snipe.rect = self.Snipe.image.get_rect()
+        self.Snipe.rect.x, self.Snipe.rect.y = player.rect.x - 5, player.rect.y + 40
+        self.player = player
+        self.side = 'Right'
+        guns_sprites.add(self.Snipe)
+
+    def update(self):
+        if self.player.side == 'Right':
+            if self.side == 'Left':
+                self.Snipe.image = pygame.transform.flip(self.Snipe.image, True, False)
+                self.side = 'Right'
+            self.Snipe.rect.x, self.Snipe.rect.y = self.player.rect.x - 5, self.player.rect.y + 40
+        elif self.player.side == 'Left':
+            if self.side == 'Right':
+                self.Snipe.image = pygame.transform.flip(self.Snipe.image, True, False)
+                self.side = 'Left'
+            self.Snipe.rect.x, self.Snipe.rect.y = self.player.rect.x - 70, self.player.rect.y + 40
+
+class Mp5(pygame.sprite.Sprite):
+    def __init__(self, player):
+        self.Mp5 = pygame.sprite.Sprite()
+        self.Mp5.image = pygame.transform.scale(load_image('guns/mp5.png'), (75, 30))
+        self.Mp5.rect = self.Mp5.image.get_rect()
+        self.Mp5.rect.x, self.Mp5.rect.y = player.rect.x, player.rect.y + 40
+        self.player = player
+        self.side = 'Right'
+        guns_sprites.add(self.Mp5)
+
+    def update(self):
+        if self.player.side == 'Right':
+            if self.side == 'Left':
+                self.Mp5.image = pygame.transform.flip(self.Mp5.image, True, False)
+                self.side = 'Right'
+            self.Mp5.rect.x, self.Mp5.rect.y = self.player.rect.x, self.player.rect.y + 40
+        elif self.player.side == 'Left':
+            if self.side == 'Right':
+                self.Mp5.image = pygame.transform.flip(self.Mp5.image, True, False)
+                self.side = 'Left'
+            self.Mp5.rect.x, self.Mp5.rect.y = self.player.rect.x - 20, self.player.rect.y + 40
+
+player = Player(600, 20, 'awp')
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
@@ -182,7 +259,7 @@ while running:
             if event.key == pygame.K_RIGHT:
                 player.moveright = False
     player.players_move()
-    pistol.update()
+    player.weapon.update()
     level_sprites.draw(screen)
     platform_sprites.draw(screen)
     all_sprites.draw(screen)
