@@ -1,6 +1,8 @@
 import pygame
 import os
-#import random
+
+
+# import random
 
 
 def load_image(name, colorkey=None):
@@ -16,6 +18,7 @@ def load_image(name, colorkey=None):
             colorkey = image.get_at((0, 0))
         image.set_colorkey(colorkey)
     return image
+
 
 def load_level(filename):
     file = open(filename, 'r')
@@ -40,19 +43,21 @@ def load_level(filename):
 pygame.init()
 size = width, height = 1024, 600
 screen = pygame.display.set_mode(size)
-all_sprites = pygame.sprite.Group() #все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
-level_sprites = pygame.sprite.Group()  #тут меня только фон
-platform_sprites = pygame.sprite.Group() #платформы все
+all_sprites = pygame.sprite.Group()  # все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
+level_sprites = pygame.sprite.Group()  # тут меня только фон
+platform_sprites = pygame.sprite.Group()  # платформы все
+guns_sprites = pygame.sprite.Group()
+
 
 class Player(pygame.sprite.Sprite):
-    image = load_image("playerr.png") #player = персонаж, r = вправо направлен
+    image = load_image("player.png")  # player = персонаж, r = вправо направлен
 
     def __init__(self, x, y):
-        super().__init__(all_sprites) #он у нас тут вроде добавляется в all_sprites
-        Player.image = pygame.transform.scale(Player.image, (50,120)) #сделал, чтобы было не уродливо
+        super().__init__(all_sprites)  # он у нас тут вроде добавляется в all_sprites
+        Player.image = pygame.transform.scale(Player.image, (50, 120))  # сделал, чтобы было не уродливо
         self.image = Player.image
         self.rect = self.image.get_rect()
-        self.mask = pygame.mask.from_surface(self.image) #типо по маске мы
+        self.mask = pygame.mask.from_surface(self.image)  # типо по маске мы
         self.rect.x = x
         self.rect.y = y
         self.gravity = 1
@@ -60,7 +65,8 @@ class Player(pygame.sprite.Sprite):
         self.moveright = False
         self.jump = False
         self.drop = False
-        self.gravity_velocity = 0.07 #скорость, с которой растет скорость падения
+        self.side = 'Right'
+        self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
 
     def players_move(self):
         if self.jump:
@@ -74,14 +80,18 @@ class Player(pygame.sprite.Sprite):
             self.jump = False
         if self.moveright:
             player.rect.x += 2
-            player.image = pygame.transform.scale(load_image('playerr.png'), (50, 120))
+            if self.side == 'Left':
+                player.image = pygame.transform.flip(player.image, True, False)
+                self.side = 'Right'
             if pygame.sprite.spritecollideany(player, platform_sprites):  # столкновения с платформами/борадми
                 sprite = pygame.sprite.spritecollideany(player, platform_sprites)
                 if player.rect.y - 120 > sprite.rect.y and self.gravity > 0:
                     player.rect.x -= 2
         if self.moveleft:
             player.rect.x -= 2
-            player.image = pygame.transform.scale(load_image('playerl.png'), (50, 120))  # персонаж направлен влево
+            if self.side == 'Right':
+                player.image = pygame.transform.flip(player.image, True, False)  # персонаж направлен влево
+                self.side = 'Left'
             if pygame.sprite.spritecollideany(player, platform_sprites):  # столкновения с платформами/борадми
                 sprite = pygame.sprite.spritecollideany(player, platform_sprites)
                 if player.rect.y - 120 > sprite.rect.y and self.gravity > 0:  # проверяем, что его ноги ниже выше платформы
@@ -89,20 +99,20 @@ class Player(pygame.sprite.Sprite):
         if self.drop:
             player.rect.y += 2
             self.drop = False
-        if self.gravity >= 0: #если он падает
+        if self.gravity >= 0:  # если он падает
             self.rect.y += 1
             if not pygame.sprite.spritecollideany(self, platform_sprites):  # если под ним нет поверхности
                 self.rect.y -= 1
                 self.rect.y += self.gravity
                 self.gravity += self.gravity_velocity
-                while pygame.sprite.spritecollideany(self, platform_sprites): #вдруг появилась поверхность
+                while pygame.sprite.spritecollideany(self, platform_sprites):  # вдруг появилась поверхность
                     self.rect.y -= 1
                     self.gravity = 0
             else:
-                sprite = pygame.sprite.spritecollideany(self, platform_sprites) #есть поверхность
-                if self.rect.y + 119 <= sprite.rect.y: #наши ножки выше этой поверхности
+                sprite = pygame.sprite.spritecollideany(self, platform_sprites)  # есть поверхность
+                if self.rect.y + 119 <= sprite.rect.y:  # наши ножки выше этой поверхности
                     self.rect.y -= 1
-                else: #наши ножки ниже этой поверхности
+                else:  # наши ножки ниже этой поверхности
                     self.rect.y -= 1
                     self.rect.y += self.gravity
                     self.gravity += self.gravity_velocity
@@ -118,14 +128,37 @@ class Player(pygame.sprite.Sprite):
 class Platform(pygame.sprite.Sprite):
     def __init__(self, pos, scale, filename):
         base_platform = pygame.sprite.Sprite()
-        base_platform.image = pygame.transform.scale(load_image(filename), scale) #платформа и её размеры
+        base_platform.image = pygame.transform.scale(load_image(filename), scale)  # платформа и её размеры
         base_platform.rect = base_platform.image.get_rect()
         base_platform.rect.x, base_platform.rect.y = pos
         platform_sprites.add(base_platform)
 
 
-player = Player(600, 20)
+class Pistol(pygame.sprite.Sprite):
+    def __init__(self, player):
+        self.pistol = pygame.sprite.Sprite()
+        self.pistol.image = pygame.transform.scale(load_image('guns/pistol.png'), (40, 25))
+        self.pistol.rect = self.pistol.image.get_rect()
+        self.pistol.rect.x, self.pistol.rect.y = player.rect.x + 10, player.rect.y + 30
+        self.player = player
+        self.side = 'Right'
+        guns_sprites.add(self.pistol)
 
+    def update(self):
+        if self.player.side == 'Right':
+            if self.side == 'Left':
+                self.pistol.image = pygame.transform.flip(self.pistol.image, True, False)
+                self.side = 'Right'
+            self.pistol.rect.x, self.pistol.rect.y = self.player.rect.x + 25, self.player.rect.y + 50
+        elif self.player.side == 'Left':
+            if self.side == 'Right':
+                self.pistol.image = pygame.transform.flip(self.pistol.image, True, False)
+                self.side = 'Left'
+            self.pistol.rect.x, self.pistol.rect.y = self.player.rect.x - 10, self.player.rect.y + 50
+
+
+player = Player(600, 20)
+pistol = Pistol(player)
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
@@ -134,7 +167,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN :
+        if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 player.moveleft = True
             if event.key == pygame.K_RIGHT:
@@ -149,9 +182,11 @@ while running:
             if event.key == pygame.K_RIGHT:
                 player.moveright = False
     player.players_move()
+    pistol.update()
     level_sprites.draw(screen)
     platform_sprites.draw(screen)
     all_sprites.draw(screen)
+    guns_sprites.draw(screen)
     pygame.display.flip()
     clock = pygame.time.Clock()
 
