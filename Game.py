@@ -1,8 +1,6 @@
 import pygame
 import os
-
-
-# import random
+from random import choice
 
 
 def load_image(name, colorkey=None):
@@ -48,6 +46,9 @@ level_sprites = pygame.sprite.Group()  # тут меня только фон
 platform_sprites = pygame.sprite.Group()  # платформы все
 guns_sprites = pygame.sprite.Group()
 bullet_sprites = pygame.sprite.Group()
+box_sprites = pygame.sprite.Group()
+time = 0
+boxes = []
 
 
 class Player(pygame.sprite.Sprite):
@@ -58,6 +59,7 @@ class Player(pygame.sprite.Sprite):
         Player.image = pygame.transform.scale(Player.image, (50, 120))  # сделал, чтобы было не уродливо
         self.image = Player.image
         self.rect = self.image.get_rect()
+        self.pos = x,y
         self.rect.x = x
         self.rect.y = y
         self.gravity = 1
@@ -67,27 +69,25 @@ class Player(pygame.sprite.Sprite):
         self.drop = False
         self.shoot = False
         self.side = 'Right'
+        self.gun = gun
         self.velocityx = 0
         self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
+        self.death = 0
         if gun == 'Pistol':
-            weapon = Pistol(self)
-            self.weapon = weapon
+            self.weapon = Pistol(self)
         elif gun == 'ak47':
-            weapon = Gun(self)
-            self.weapon = weapon
+            self.weapon = Gun(self)
         elif gun == 'awp':
-            weapon = Snipe(self)
-            self.weapon = weapon
+            self.weapon = Snipe(self)
         elif gun == 'mp5':
-            weapon = Mp5(self)
-            self.weapon = weapon
+            self.weapon = Mp5(self)
 
     def players_move(self):
         if self.jump:
             self.rect.y += 1
             if pygame.sprite.spritecollideany(self, platform_sprites):
                 sprite = pygame.sprite.spritecollideany(self, platform_sprites)
-                if self.rect.y + 120 - sprite.rect.y < 2:  # у нас ноги близки к верхушки платформы
+                if self.rect.y + 120 - sprite.rect.y < 5:  # у нас ноги близки к верхушки платформы
                     self.gravity = -5
                     self.rect.y -= 1
             self.rect.y -= 1
@@ -150,6 +150,39 @@ class Player(pygame.sprite.Sprite):
             self.velocityx -= 0.2
         elif self.velocityx < 0:
             self.velocityx += 0.2
+
+        if self.rect.y > 1300:
+            self.rect.x, self.rect.y = self.pos
+            self.death += 1
+
+        if pygame.sprite.spritecollideany(self, box_sprites):
+            box = pygame.sprite.spritecollideany(self, box_sprites)
+            self.swap_weapon(box)
+    def swap_weapon(self, box):
+        box.dostav = True
+        gun = box.gun
+        for k in self.weapon.bullets:
+            k.bullet.rect.y = -50
+            k.bullet.rect.x = 0
+            k.bullet.kill()
+        if self.gun == 'mp5':
+            self.weapon.Mp5.kill()
+        elif self.gun == 'ak47':
+            self.weapon.Gun.kill()
+        elif self.gun == 'Pistol':
+            self.weapon.pistol.kill()
+        else:
+            self.weapon.Snipe.kill()
+        if gun == 'mp5':
+            self.weapon = Mp5(self)
+        if gun == 'awp':
+            self.weapon = Snipe(self)
+        if gun == 'ak47':
+            self.weapon = Gun(self)
+        self.gun = gun
+        box.rect.x = 0
+        box.rect.y = -40
+
 
 
 class Platform(pygame.sprite.Sprite):
@@ -384,7 +417,7 @@ class SniperBullet(pygame.sprite.Sprite):
             self.bullet.rect.x, self.bullet.rect.y = x - 5, y
         self.velocity = 10
         bullet_sprites.add(self.bullet)
-        self.streight = 13
+        self.streight = 14
 
     def update(self):
         if self.side == 'Right':
@@ -409,12 +442,34 @@ class SniperBullet(pygame.sprite.Sprite):
             self.bullet.rect.x = 0
             self.bullet.rect.y = -100
 
+
+class BoxWithGun(pygame.sprite.Sprite):
+    def __init__(self):
+        self.box = pygame.sprite.Sprite()
+        self.box.image = pygame.transform.scale(load_image('box.png'), (40, 40))
+        self.box.rect = self.box.image.get_rect()
+        self.box.rect.x = choice(range(1,964))
+        self.box.rect.y = 0
+        self.velo = 1
+        self.dostav = False
+        self.box.gun = choice(['ak47', 'awp', 'mp5'])
+        box_sprites.add(self.box)
+
+    def update(self):
+            if not pygame.sprite.spritecollideany(self.box, platform_sprites):
+                self.box.rect.y += self.velo
+            if self.box.rect.x == 0:
+                self.velo = 0
+
+
+
 player = Player(600, 20, 'mp5') #Pistol, ak47, awp, mp5
-player2 = Player(600, 20, 'ak47')
+player2 = Player(400, 20, 'ak47')
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
 while running:
+    time += 1
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -471,12 +526,18 @@ while running:
     if player2.weapon.bullets != []:
         for k in player2.weapon.bullets:
             k.update()
+    if time % 1000 == 0:
+        box = BoxWithGun()
+        boxes.append(box)
     level_sprites.draw(screen)
     platform_sprites.draw(screen)
     all_sprites.draw(screen)
     guns_sprites.draw(screen)
     bullet_sprites.draw(screen)
+    box_sprites.draw(screen)
     pygame.display.flip()
+    for k in boxes:
+        k.update()
     clock = pygame.time.Clock()
 
 pygame.quit()
