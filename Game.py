@@ -58,7 +58,6 @@ class Player(pygame.sprite.Sprite):
         Player.image = pygame.transform.scale(Player.image, (50, 120))  # сделал, чтобы было не уродливо
         self.image = Player.image
         self.rect = self.image.get_rect()
-        self.mask = pygame.mask.from_surface(self.image)  # типо по маске мы
         self.rect.x = x
         self.rect.y = y
         self.gravity = 1
@@ -68,6 +67,7 @@ class Player(pygame.sprite.Sprite):
         self.drop = False
         self.shoot = False
         self.side = 'Right'
+        self.velocityx = 0
         self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
         if gun == 'Pistol':
             weapon = Pistol(self)
@@ -84,34 +84,34 @@ class Player(pygame.sprite.Sprite):
 
     def players_move(self):
         if self.jump:
-            player.rect.y += 1
-            if pygame.sprite.spritecollideany(player, platform_sprites):
-                sprite = pygame.sprite.spritecollideany(player, platform_sprites)
-                if player.rect.y + 120 - sprite.rect.y < 2:  # у нас ноги близки к верхушки платформы
-                    player.gravity = -5
-                    player.rect.y -= 1
-            player.rect.y -= 1
+            self.rect.y += 1
+            if pygame.sprite.spritecollideany(self, platform_sprites):
+                sprite = pygame.sprite.spritecollideany(self, platform_sprites)
+                if self.rect.y + 120 - sprite.rect.y < 2:  # у нас ноги близки к верхушки платформы
+                    self.gravity = -5
+                    self.rect.y -= 1
+            self.rect.y -= 1
             self.jump = False
         if self.moveright:
-            player.rect.x += 2
+            self.rect.x += 2
             if self.side == 'Left':
-                player.image = pygame.transform.flip(player.image, True, False)
+                self.image = pygame.transform.flip(self.image, True, False)
                 self.side = 'Right'
-            if pygame.sprite.spritecollideany(player, platform_sprites):  # столкновения с платформами/борадми
-                sprite = pygame.sprite.spritecollideany(player, platform_sprites)
-                if player.rect.y - 120 > sprite.rect.y and self.gravity > 0:
-                    player.rect.x -= 2
+            if pygame.sprite.spritecollideany(self, platform_sprites):  # столкновения с платформами/борадми
+                sprite = pygame.sprite.spritecollideany(self, platform_sprites)
+                if self.rect.y - 120 > sprite.rect.y and self.gravity > 0:
+                    self.rect.x -= 2
         if self.moveleft:
-            player.rect.x -= 2
+            self.rect.x -= 2
             if self.side == 'Right':
-                player.image = pygame.transform.flip(player.image, True, False)  # персонаж направлен влево
+                self.image = pygame.transform.flip(self.image, True, False)  # персонаж направлен влево
                 self.side = 'Left'
-            if pygame.sprite.spritecollideany(player, platform_sprites):  # столкновения с платформами/борадми
-                sprite = pygame.sprite.spritecollideany(player, platform_sprites)
-                if player.rect.y - 120 > sprite.rect.y and self.gravity > 0:  # проверяем, что его ноги ниже выше платформы
-                    player.rect.x += 2
+            if pygame.sprite.spritecollideany(self, platform_sprites):  # столкновения с платформами/борадми
+                sprite = pygame.sprite.spritecollideany(self, platform_sprites)
+                if self.rect.y - 120 > sprite.rect.y and self.gravity > 0:  # проверяем, что его ноги ниже выше платформы
+                    self.rect.x += 2
         if self.drop:
-            player.rect.y += 2
+            self.rect.y += 2
             self.drop = False
         if self.gravity >= 0:  # если он падает
             self.rect.y += 1
@@ -138,8 +138,18 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += self.gravity
             self.gravity += self.gravity_velocity
 
-        if self.shoot == True:
+        if self.shoot:
             self.weapon.shot()
+
+        self.rect.x -= self.velocityx
+
+        if abs(self.velocityx) < 1:
+            self.velocityx = 0
+
+        if self.velocityx > 0:
+            self.velocityx -= 0.2
+        elif self.velocityx < 0:
+            self.velocityx += 0.2
 
 
 class Platform(pygame.sprite.Sprite):
@@ -292,6 +302,10 @@ class Minibullet(pygame.sprite.Sprite):
             self.bullet.rect.x, self.bullet.rect.y = x - 5, y + 5
         self.velocity = 3
         bullet_sprites.add(self.bullet)
+        if gun == 'Pistol':
+            self.streight = 10
+        else:
+            self.streight = 8
 
     def update(self):
         if self.side == 'Right':
@@ -299,9 +313,22 @@ class Minibullet(pygame.sprite.Sprite):
         else:
             self.bullet.rect.x -= self.velocity
         if pygame.sprite.spritecollideany(self.bullet, platform_sprites):
-            self.bullet.kill()
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
         if self.bullet.rect.x > 2000 or self.bullet.rect.x < -500:
-            self.bullet.kill()
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
+        if pygame.sprite.spritecollideany(self.bullet, all_sprites):
+            hero = pygame.sprite.spritecollideany(self.bullet, all_sprites)
+            if self.side == 'Right':
+                hero.velocityx = -self.streight
+            else:
+                hero.velocityx = self.streight
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
 
 class Mediumbullet(pygame.sprite.Sprite):
     def __init__(self, side, x, y):
@@ -317,6 +344,7 @@ class Mediumbullet(pygame.sprite.Sprite):
             self.bullet.rect.x, self.bullet.rect.y = x - 5, y
         self.velocity = 5
         bullet_sprites.add(self.bullet)
+        self.streight = 11
 
     def update(self):
         if self.side == 'Right':
@@ -324,9 +352,23 @@ class Mediumbullet(pygame.sprite.Sprite):
         else:
             self.bullet.rect.x -= self.velocity
         if pygame.sprite.spritecollideany(self.bullet, platform_sprites):
-            self.bullet.kill()
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
         if self.bullet.rect.x > 2000 or self.bullet.rect.x < -500:
-            self.bullet.kill()
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
+        if pygame.sprite.spritecollideany(self.bullet, all_sprites):
+            hero = pygame.sprite.spritecollideany(self.bullet, all_sprites)
+            if self.side == 'Right':
+                hero.velocityx = -self.streight
+            else:
+                hero.velocityx = self.streight
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
+
 
 class SniperBullet(pygame.sprite.Sprite):
     def __init__(self, side, x, y):
@@ -342,6 +384,7 @@ class SniperBullet(pygame.sprite.Sprite):
             self.bullet.rect.x, self.bullet.rect.y = x - 5, y
         self.velocity = 10
         bullet_sprites.add(self.bullet)
+        self.streight = 13
 
     def update(self):
         if self.side == 'Right':
@@ -349,21 +392,34 @@ class SniperBullet(pygame.sprite.Sprite):
         else:
             self.bullet.rect.x -= self.velocity
         if pygame.sprite.spritecollideany(self.bullet, platform_sprites):
-            self.bullet.kill()
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
         if self.bullet.rect.x > 2000 or self.bullet.rect.x < -500:
-            self.bullet.kill()
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
+        if pygame.sprite.spritecollideany(self.bullet, all_sprites):
+            hero = pygame.sprite.spritecollideany(self.bullet, all_sprites)
+            if self.side == 'Right':
+                hero.velocityx = -self.streight
+            else:
+                hero.velocityx = self.streight
+            self.velocity = 0
+            self.bullet.rect.x = 0
+            self.bullet.rect.y = -100
 
-player = Player(600, 20, 'Pistol') #Pistol, ak47, awp, mp5
-#player2 = Player(600, 20, 'Pistol')
+player = Player(600, 20, 'mp5') #Pistol, ak47, awp, mp5
+player2 = Player(600, 20, 'ak47')
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
-moveleft, moveright, jump = False, False, False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
+            #Player 1
             if event.key == pygame.K_LEFT:
                 player.moveleft = True
             if event.key == pygame.K_RIGHT:
@@ -374,19 +430,46 @@ while running:
                 player.drop = True
             if event.key == pygame.K_m:
                 player.shoot = True
+            #Player 2
+            if event.key == pygame.K_w:
+                player2.jump = True
+            if event.key == pygame.K_d:
+                player2.moveright = True
+            if event.key == pygame.K_a:
+                player2.moveleft = True
+            if event.key == pygame.K_s:
+                player2.drop = True
+            if event.key == pygame.K_g:
+                player2.shoot = True
         if event.type == pygame.KEYUP:
+            #Player 1
             if event.key == pygame.K_LEFT:
                 player.moveleft = False
             if event.key == pygame.K_RIGHT:
                 player.moveright = False
             if event.key == pygame.K_m:
                 player.shoot = False
+            #Player 2
+            if event.key == pygame.K_a:
+                player2.moveleft = False
+            if event.key == pygame.K_d:
+                player2.moveright = False
+            if event.key == pygame.K_g:
+                player2.shoot = False
+
     if player.weapon.kd != 0:
         player.weapon.kd -= 1
     player.players_move()
     player.weapon.update()
     if player.weapon.bullets != []:
         for k in player.weapon.bullets:
+            k.update()
+    if player2.weapon.kd != 0:
+        player2.weapon.kd -= 1
+    player2.players_move()
+    player2.weapon.update()
+    if player2.weapon.bullets != []:
+        for k in player2.weapon.bullets:
             k.update()
     level_sprites.draw(screen)
     platform_sprites.draw(screen)
