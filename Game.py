@@ -47,6 +47,7 @@ all_sprites = pygame.sprite.Group()  # все спрайты, которые р�
 level_sprites = pygame.sprite.Group()  # тут меня только фон
 platform_sprites = pygame.sprite.Group()  # платформы все
 guns_sprites = pygame.sprite.Group()
+bullet_sprites = pygame.sprite.Group()
 
 
 class Player(pygame.sprite.Sprite):
@@ -65,6 +66,7 @@ class Player(pygame.sprite.Sprite):
         self.moveright = False
         self.jump = False
         self.drop = False
+        self.shoot = False
         self.side = 'Right'
         self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
         if gun == 'Pistol':
@@ -136,6 +138,9 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += self.gravity
             self.gravity += self.gravity_velocity
 
+        if self.shoot == True:
+            self.weapon.shot()
+
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, pos, scale, filename):
@@ -191,6 +196,7 @@ class Gun(pygame.sprite.Sprite):
                 self.side = 'Left'
             self.Gun.rect.x, self.Gun.rect.y = self.player.rect.x - 30, self.player.rect.y + 50
 
+
 class Snipe(pygame.sprite.Sprite):
     def __init__(self, player):
         self.Snipe = pygame.sprite.Sprite()
@@ -213,6 +219,7 @@ class Snipe(pygame.sprite.Sprite):
                 self.side = 'Left'
             self.Snipe.rect.x, self.Snipe.rect.y = self.player.rect.x - 70, self.player.rect.y + 40
 
+
 class Mp5(pygame.sprite.Sprite):
     def __init__(self, player):
         self.Mp5 = pygame.sprite.Sprite()
@@ -221,7 +228,9 @@ class Mp5(pygame.sprite.Sprite):
         self.Mp5.rect.x, self.Mp5.rect.y = player.rect.x, player.rect.y + 40
         self.player = player
         self.side = 'Right'
+        self.bullets = []
         guns_sprites.add(self.Mp5)
+        self.kd = 0
 
     def update(self):
         if self.player.side == 'Right':
@@ -235,7 +244,32 @@ class Mp5(pygame.sprite.Sprite):
                 self.side = 'Left'
             self.Mp5.rect.x, self.Mp5.rect.y = self.player.rect.x - 20, self.player.rect.y + 40
 
-player = Player(600, 20, 'awp')
+    def shot(self):
+        if self.kd == 0:
+            self.bullet = Minibullet(self.side, self.Mp5.rect.x, self.Mp5.rect.y)
+            self.bullets.append(self.bullet)
+            self.kd = 10
+
+class Minibullet(pygame.sprite.Sprite):
+    def __init__(self, side, x, y):
+        self.side = side
+        self.bullet = pygame.sprite.Sprite()
+        self.bullet.image = pygame.transform.scale(load_image('guns/Minibullet.png'), (20, 5))
+        if side == 'Left':
+            self.bullet.image = pygame.transform.flip(self.bullet.image, True, False)
+        self.bullet.rect = self.bullet.image.get_rect()
+        self.bullet.rect.x, self.bullet.rect.y = x + 75, y
+        self.velocity = 3
+        bullet_sprites.add(self.bullet)
+
+    def update(self):
+        if self.side == 'Right':
+            self.bullet.rect.x += self.velocity
+        else:
+            self.bullet.rect.x -= self.velocity
+        if pygame.sprite.spritecollideany(self.bullet, platform_sprites):
+            self.bullet.kill()
+player = Player(600, 20, 'mp5')
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
@@ -253,17 +287,27 @@ while running:
                 player.jump = True
             if event.key == pygame.K_DOWN:
                 player.drop = True
+            if event.key == pygame.K_m:
+                player.shoot = True
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 player.moveleft = False
             if event.key == pygame.K_RIGHT:
                 player.moveright = False
+            if event.key == pygame.K_m:
+                player.shoot = False
+    if player.weapon.kd != 0:
+        player.weapon.kd -= 1
     player.players_move()
     player.weapon.update()
+    if player.weapon.bullets != []:
+        for k in player.weapon.bullets:
+            k.update()
     level_sprites.draw(screen)
     platform_sprites.draw(screen)
     all_sprites.draw(screen)
     guns_sprites.draw(screen)
+    bullet_sprites.draw(screen)
     pygame.display.flip()
     clock = pygame.time.Clock()
 
