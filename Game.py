@@ -47,6 +47,7 @@ platform_sprites = pygame.sprite.Group()  # платформы все
 guns_sprites = pygame.sprite.Group()
 bullet_sprites = pygame.sprite.Group()
 box_sprites = pygame.sprite.Group()
+numbers_sprites = pygame.sprite.Group()
 time = 0
 boxes = []
 
@@ -54,12 +55,12 @@ boxes = []
 class Player(pygame.sprite.Sprite):
     image = load_image("player.png")  # player = персонаж, r = вправо направлен
 
-    def __init__(self, x, y, gun):
+    def __init__(self, x, y, gun, side='Right'):
         super().__init__(all_sprites)  # он у нас тут вроде добавляется в all_sprites
         Player.image = pygame.transform.scale(Player.image, (50, 120))  # сделал, чтобы было не уродливо
         self.image = Player.image
         self.rect = self.image.get_rect()
-        self.pos = x,y
+        self.pos = x, y
         self.rect.x = x
         self.rect.y = y
         self.gravity = 1
@@ -68,13 +69,15 @@ class Player(pygame.sprite.Sprite):
         self.jump = False
         self.drop = False
         self.shoot = False
-        self.side = 'Right'
+        self.side = side
+        if self.side == 'Left':
+            self.image = pygame.transform.flip(self.image, True, False)
         self.gun = gun
         self.ammo = -1
         self.bullets = []
         self.velocityx = 0
         self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
-        self.death = 0
+        self.lives = 5
         if gun == 'Pistol':
             self.weapon = Pistol(self)
         elif gun == 'ak47':
@@ -154,8 +157,9 @@ class Player(pygame.sprite.Sprite):
             self.velocityx += 0.2
 
         if self.rect.y > 1300:
-            self.rect.x, self.rect.y = self.pos
-            self.death += 1
+            self.rect.x, self.rect.y = choice(range(900)), self.pos[1]
+            self.lives -= 1
+            self.swap_weapon(gun=False)
 
         if pygame.sprite.spritecollideany(self, box_sprites):
             box = pygame.sprite.spritecollideany(self, box_sprites)
@@ -163,6 +167,7 @@ class Player(pygame.sprite.Sprite):
 
         if self.ammo == 0:
             self.swap_weapon(gun=False)
+            self.ammo = self.weapon.ammo
 
     def swap_weapon(self, box=False, gun=True):
         self.weapon.gun.kill()
@@ -186,7 +191,6 @@ class Player(pygame.sprite.Sprite):
         self.weapon.kd = 60
 
 
-
 class Platform(pygame.sprite.Sprite):
     def __init__(self, pos, scale, filename):
         base_platform = pygame.sprite.Sprite()
@@ -194,6 +198,95 @@ class Platform(pygame.sprite.Sprite):
         base_platform.rect = base_platform.image.get_rect()
         base_platform.rect.x, base_platform.rect.y = pos
         platform_sprites.add(base_platform)
+
+
+class Table(pygame.sprite.Sprite):
+    def __init__(self, pos, gamer, nameoftable):
+        table = pygame.sprite.Sprite()
+        table.image = pygame.transform.scale(load_image('fortable/' + nameoftable), (210, 100))
+        table.rect = table.image.get_rect()
+        table.rect.x, table.rect.y = pos
+        self.player = gamer
+        ammo = pygame.sprite.Sprite()
+        ammo.image = pygame.transform.scale(load_image('fortable/ammo.png'), (70, 15))
+        ammo.rect = ammo.image.get_rect()
+        self.ammo = self.player.ammo
+        ammo.rect.x, ammo.rect.y = pos[0] + 90, pos[1] + 30
+        numbers_sprites.add(ammo)
+
+        lives = pygame.sprite.Sprite()
+        lives.image = pygame.transform.scale(load_image('fortable/lives.png'), (50, 20))
+        lives.rect = lives.image.get_rect()
+        lives.rect.x, lives.rect.y = pos[0] + 110, pos[1] + 60
+        numbers_sprites.add(lives)
+        self.ammo1 = pygame.sprite.Sprite()
+        self.ammo2 = pygame.sprite.Sprite()
+
+        if len(str(self.player.ammo)) == 1 and player.ammo != -1:
+            self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+            self.ammo1.rect = self.ammo1.image.get_rect()
+            self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo) + '.png'), (15, 17))
+            self.ammo2.rect = self.ammo2.image.get_rect()
+            self.ammo2.rect.x, self.ammo2.rect.y = pos[0] + 185, pos[1] + 30
+        elif len(str(self.player.ammo)) == 2 and player.ammo != -1:
+            self.ammo1.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[0] + '.png'), (15, 17))
+            self.ammo1.rect = self.ammo1.image.get_rect()
+            self.ammo1.rect.x, self.ammo1.rect.y = pos[0] + 165, pos[1] + 30
+            self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[1] + '.png'), (15, 17))
+            self.ammo2.rect = self.ammo2.image.get_rect()
+            self.ammo2.rect.x, self.ammo2.rect.y = pos[0] + 185, pos[1] + 30
+        elif self.player.ammo == -1:
+            self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+            self.ammo1.rect = self.ammo1.image.get_rect()
+            self.ammo2.image = pygame.transform.scale(load_image('fortable/nolimit.png'), (20, 23))
+            self.ammo2.rect = self.ammo2.image.get_rect()
+            self.ammo2.rect.x, self.ammo2.rect.y = pos[0] + 165, pos[1] + 25
+
+        numbers_sprites.add(self.ammo1, self.ammo2)
+
+        self.x = pos[0]
+        self.y = pos[1]
+        self.number = player.lives
+        all_sprites.add(table)
+        self.lives = pygame.sprite.Sprite()
+        self.lives.image = pygame.transform.scale(load_image('fortable/' + str(self.player.lives) + '.png'), (15, 17))
+        self.lives.rect = self.lives.image.get_rect()
+        self.lives.rect.x = pos[0] + 170
+        self.lives.rect.y = pos[1] + 65
+        numbers_sprites.add(self.lives)
+
+    def update(self):
+        if self.number != self.player.lives and self.player.lives >= 0:
+            self.lives.image = pygame.transform.scale(load_image('fortable/' + str(self.player.lives) + '.png'),
+                                                      (15, 17))
+            self.lives.rect = self.lives.image.get_rect()
+            self.lives.rect.x = self.x + 170
+            self.lives.rect.y = self.y + 65
+            self.number = self.player.lives
+        if self.ammo != self.player.ammo:
+            if len(str(abs(self.player.ammo))) == 1 and self.player.ammo >= 0:
+                self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+                self.ammo1.rect = self.ammo1.image.get_rect()
+                self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo) + '.png'),
+                                                          (15, 17))
+                self.ammo2.rect = self.ammo2.image.get_rect()
+                self.ammo2.rect.x, self.ammo2.rect.y = self.x + 165, self.y + 30
+            elif len(str(abs(self.player.ammo))) == 2:
+                self.ammo1.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[0] + '.png'),
+                                                          (15, 17))
+                self.ammo1.rect = self.ammo1.image.get_rect()
+                self.ammo1.rect.x, self.ammo1.rect.y = self.x + 165, self.y + 30
+                self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[1] + '.png'),
+                                                          (15, 17))
+                self.ammo2.rect = self.ammo2.image.get_rect()
+                self.ammo2.rect.x, self.ammo2.rect.y = self.x + 185, self.y + 30
+            else:
+                self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+                self.ammo1.rect = self.ammo1.image.get_rect()
+                self.ammo2.image = pygame.transform.scale(load_image('fortable/nolimit.png'), (20, 23))
+                self.ammo2.rect = self.ammo2.image.get_rect()
+                self.ammo2.rect.x, self.ammo2.rect.y = self.x + 165, self.y + 25
+            self.ammo = self.player.ammo
 
 
 class Pistol(pygame.sprite.Sprite):
@@ -225,7 +318,6 @@ class Pistol(pygame.sprite.Sprite):
             self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'Pistol')
             self.player.bullets.append(self.bullet)
             self.kd = 100
-            self.player.ammo -= 1
 
 
 class Gun(pygame.sprite.Sprite):
@@ -323,6 +415,7 @@ class Mp5(pygame.sprite.Sprite):
             self.kd = 35
             self.player.ammo -= 1
 
+
 class Minibullet(pygame.sprite.Sprite):
     def __init__(self, side, x, y, gun):
         self.side = side
@@ -368,6 +461,7 @@ class Minibullet(pygame.sprite.Sprite):
             self.velocity = 0
             self.bullet.rect.x = 0
             self.bullet.rect.y = -100
+
 
 class Mediumbullet(pygame.sprite.Sprite):
     def __init__(self, side, x, y):
@@ -454,7 +548,7 @@ class BoxWithGun(pygame.sprite.Sprite):
         self.box = pygame.sprite.Sprite()
         self.box.image = pygame.transform.scale(load_image('box.png'), (40, 40))
         self.box.rect = self.box.image.get_rect()
-        self.box.rect.x = choice(range(1,964))
+        self.box.rect.x = choice(range(1, 964))
         self.box.rect.y = 0
         self.velo = 1
         self.dostav = False
@@ -462,15 +556,16 @@ class BoxWithGun(pygame.sprite.Sprite):
         box_sprites.add(self.box)
 
     def update(self):
-            if not pygame.sprite.spritecollideany(self.box, platform_sprites):
-                self.box.rect.y += self.velo
-            if self.box.rect.x == 0:
-                self.velo = 0
+        if not pygame.sprite.spritecollideany(self.box, platform_sprites):
+            self.box.rect.y += self.velo
+        if self.box.rect.x == 0:
+            self.velo = 0
 
 
-
-player = Player(600, 20, 'Pistol') #Pistol, ak47, awp, mp5
-player2 = Player(400, 20, 'Pistol')
+player = Player(900, 20, 'Pistol', 'Left')  # Pistol, ak47, awp, mp5
+player2 = Player(100, 20, 'Pistol')
+t1 = Table((0, 0), player2, 'table.png')
+t2 = Table((width - 210, 0), player, 'table.png')
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
@@ -480,7 +575,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
-            #Player 1
+            # Player 1
             if event.key == pygame.K_LEFT:
                 player.moveleft = True
             if event.key == pygame.K_RIGHT:
@@ -491,7 +586,7 @@ while running:
                 player.drop = True
             if event.key == pygame.K_m:
                 player.shoot = True
-            #Player 2
+            # Player 2
             if event.key == pygame.K_w:
                 player2.jump = True
             if event.key == pygame.K_d:
@@ -503,14 +598,14 @@ while running:
             if event.key == pygame.K_g:
                 player2.shoot = True
         if event.type == pygame.KEYUP:
-            #Player 1
+            # Player 1
             if event.key == pygame.K_LEFT:
                 player.moveleft = False
             if event.key == pygame.K_RIGHT:
                 player.moveright = False
             if event.key == pygame.K_m:
                 player.shoot = False
-            #Player 2
+            # Player 2
             if event.key == pygame.K_a:
                 player2.moveleft = False
             if event.key == pygame.K_d:
@@ -535,12 +630,15 @@ while running:
     if time % 1000 == 0:
         box = BoxWithGun()
         boxes.append(box)
+    t1.update()
+    t2.update()
     level_sprites.draw(screen)
     platform_sprites.draw(screen)
     all_sprites.draw(screen)
     guns_sprites.draw(screen)
     bullet_sprites.draw(screen)
     box_sprites.draw(screen)
+    numbers_sprites.draw(screen)
     pygame.display.flip()
     for k in boxes:
         k.update()
