@@ -34,6 +34,7 @@ def started_menu():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                break
             if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
                 point = Fake(pygame.mouse.get_pos())
                 if pygame.sprite.spritecollideany(point, button_sprites):
@@ -45,6 +46,7 @@ def started_menu():
         fonov.draw(screen)
         button_sprites.draw(screen)
         pygame.display.flip()
+    return
 
 
 def load_level(filename):
@@ -62,7 +64,7 @@ def load_level(filename):
         if type == 'Background':
             name = element[1]
             Background = pygame.sprite.Sprite()
-            Background.image = pygame.transform.scale(load_image(name), (1024, 550))
+            Background.image = pygame.transform.scale(load_image(name), (1024, 600))
             Background.rect = Background.image.get_rect()
             level_sprites.add(Background)
 
@@ -124,59 +126,52 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += 1
             if pygame.sprite.spritecollideany(self, platform_sprites):
                 sprite = pygame.sprite.spritecollideany(self, platform_sprites)
-                if self.rect.y + 120 - sprite.rect.y < 5:  # у нас ноги близки к верхушки платформы
+                if self.rect.y + 120 - sprite.rect.y <= 3:  # у нас ноги близки к верхушки платформы
                     self.gravity = -5
                     self.rect.y -= 1
             self.rect.y -= 1
             self.jump = False
+        if self.drop:
+            self.rect.y += 5
+            self.drop = False
+        if self.shoot:
+            self.weapon.shot()
+
         if self.moveright:
             self.rect.x += 2
             if self.side == 'Left':
                 self.image = pygame.transform.flip(self.image, True, False)
                 self.side = 'Right'
-            if pygame.sprite.spritecollideany(self, platform_sprites):  # столкновения с платформами/борадми
-                sprite = pygame.sprite.spritecollideany(self, platform_sprites)
-                if self.rect.y - 120 > sprite.rect.y and self.gravity > 0:
-                    self.rect.x -= 2
         if self.moveleft:
             self.rect.x -= 2
             if self.side == 'Right':
                 self.image = pygame.transform.flip(self.image, True, False)  # персонаж направлен влево
                 self.side = 'Left'
-            if pygame.sprite.spritecollideany(self, platform_sprites):  # столкновения с платформами/борадми
+
+        if self.gravity >= 0:
+
+            if pygame.sprite.spritecollideany(self, platform_sprites):
                 sprite = pygame.sprite.spritecollideany(self, platform_sprites)
-                if self.rect.y - 120 > sprite.rect.y and self.gravity > 0:
-                    self.rect.x += 2
-        if self.drop:
-            self.rect.y += 2
-            self.drop = False
-        if self.gravity >= 0:  # если он падает
+                if self.rect.y + 120 - sprite.rect.y <= 3 and self.gravity > 0:
+                    self.rect.y = sprite.rect.y - 120
+
             self.rect.y += 1
-            if not pygame.sprite.spritecollideany(self, platform_sprites):  # если под ним нет поверхности
-                self.rect.y -= 1
-                self.rect.y += self.gravity
-                self.gravity += self.gravity_velocity
-                while pygame.sprite.spritecollideany(self, platform_sprites):  # вдруг появилась поверхность
-                    self.rect.y -= 1
-                    self.gravity = 0
-            else:
-                sprite = pygame.sprite.spritecollideany(self, platform_sprites)  # есть поверхность
-                if self.rect.y + 119 <= sprite.rect.y:  # наши ножки выше этой поверхности
-                    self.rect.y -= 1
-                else:  # наши ножки ниже этой поверхности
-                    self.rect.y -= 1
-                    self.rect.y += self.gravity
+            if not pygame.sprite.spritecollideany(self, platform_sprites):
+                if self.gravity <= 3:
                     self.gravity += self.gravity_velocity
-                    if pygame.sprite.spritecollideany(self, platform_sprites) and self.rect.y + 120 - sprite.rect.y < 2:
-                        while pygame.sprite.spritecollideany(self, platform_sprites):
-                            self.rect.y -= 1
-                            self.gravity = 0
+                self.rect.y += self.gravity
+            else:
+                sprite = pygame.sprite.spritecollideany(self, platform_sprites)
+                if self.rect.y + 120 - sprite.rect.y > 3:
+                    if self.gravity <= 3:
+                        self.gravity += self.gravity_velocity
+                    self.rect.y += self.gravity
+                elif self.gravity > 0:
+                    self.gravity = 0
+            self.rect.y -= 1
         else:
             self.rect.y += self.gravity
             self.gravity += self.gravity_velocity
-
-        if self.shoot:
-            self.weapon.shot()
 
         self.rect.x -= self.velocityx
 
@@ -403,7 +398,7 @@ class Gun(pygame.sprite.Sprite):
         if self.kd == 0:
             self.bullet = Mediumbullet(self.side, self.gun.rect.x, self.gun.rect.y)
             self.player.bullets.append(self.bullet)
-            self.kd = 70
+            self.kd = 60
             self.player.ammo -= 1
 
 
@@ -489,9 +484,9 @@ class Minibullet(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = x - 5, y + 5
         self.velocity = 3
         if gun == 'Pistol':
-            self.streight = 10
+            self.streight = 12
         else:
-            self.streight = 8
+            self.streight = 10
 
     def update(self):
         if self.side == 'Right':
@@ -531,7 +526,7 @@ class Mediumbullet(pygame.sprite.Sprite):
         if self.side == 'Left':
             self.rect.x, self.rect.y = x - 5, y
         self.velocity = 5
-        self.streight = 11
+        self.streight = 13
 
     def update(self):
         if self.side == 'Right':
@@ -572,7 +567,7 @@ class SniperBullet(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = x - 5, y
         self.velocity = 10
         bullet_sprites.add(self)
-        self.streight = 14
+        self.streight = 16
 
     def update(self):
         if self.side == 'Right':
@@ -635,12 +630,14 @@ while running:
     player2 = Player(100, 20, 'Pistol')
     t2 = Table((0, 0), player2, 'table.png')
     t1 = Table((width - 210, 0), player, 'table.png')
-    load_level('level1.txt')
+    load_level('level4.txt')
     time = 0
     while running:
         time += 1
         if time%15000 == 0:
             bullet_sprites.empty()
+            player.bullets = []
+            player2.bullets = []
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
