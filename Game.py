@@ -71,6 +71,7 @@ class Player(pygame.sprite.Sprite):
         self.side = 'Right'
         self.gun = gun
         self.ammo = -1
+        self.bullets = []
         self.velocityx = 0
         self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
         self.death = 0
@@ -164,10 +165,6 @@ class Player(pygame.sprite.Sprite):
             self.swap_weapon(gun=False)
 
     def swap_weapon(self, box=False, gun=True):
-        for k in self.weapon.bullets:
-            k.bullet.rect.y = -50
-            k.bullet.rect.x = 0
-            k.bullet.kill()
         self.weapon.gun.kill()
         if not gun:
             self.weapon = Pistol(self)
@@ -186,6 +183,7 @@ class Player(pygame.sprite.Sprite):
             box.rect.x = 0
             box.rect.y = -40
         self.ammo = self.weapon.ammo
+        self.weapon.kd = 60
 
 
 
@@ -206,7 +204,6 @@ class Pistol(pygame.sprite.Sprite):
         self.gun.rect.x, self.gun.rect.y = player.rect.x + 35, player.rect.y + 45
         self.player = player
         self.side = 'Right'
-        self.bullets = []
         self.kd = 0
         self.ammo = -1
         guns_sprites.add(self.gun)
@@ -226,7 +223,7 @@ class Pistol(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'Pistol')
-            self.bullets.append(self.bullet)
+            self.player.bullets.append(self.bullet)
             self.kd = 100
             self.player.ammo -= 1
 
@@ -239,7 +236,6 @@ class Gun(pygame.sprite.Sprite):
         self.gun.rect.x, self.gun.rect.y = player.rect.x, player.rect.y + 50
         self.player = player
         self.side = 'Right'
-        self.bullets = []
         self.kd = 0
         self.ammo = 15
         guns_sprites.add(self.gun)
@@ -259,7 +255,7 @@ class Gun(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             self.bullet = Mediumbullet(self.side, self.gun.rect.x, self.gun.rect.y)
-            self.bullets.append(self.bullet)
+            self.player.bullets.append(self.bullet)
             self.kd = 70
             self.player.ammo -= 1
 
@@ -272,7 +268,6 @@ class Snipe(pygame.sprite.Sprite):
         self.gun.rect.x, self.gun.rect.y = player.rect.x - 5, player.rect.y + 40
         self.player = player
         self.side = 'Right'
-        self.bullets = []
         self.kd = 0
         self.ammo = 5
         guns_sprites.add(self.gun)
@@ -292,7 +287,7 @@ class Snipe(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             self.bullet = SniperBullet(self.side, self.gun.rect.x, self.gun.rect.y)
-            self.bullets.append(self.bullet)
+            self.player.bullets.append(self.bullet)
             self.kd = 175
             self.player.ammo -= 1
 
@@ -305,7 +300,6 @@ class Mp5(pygame.sprite.Sprite):
         self.gun.rect.x, self.gun.rect.y = player.rect.x, player.rect.y + 40
         self.player = player
         self.side = 'Right'
-        self.bullets = []
         self.ammo = 30
         guns_sprites.add(self.gun)
         self.kd = 0
@@ -325,7 +319,7 @@ class Mp5(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'mp5')
-            self.bullets.append(self.bullet)
+            self.player.bullets.append(self.bullet)
             self.kd = 35
             self.player.ammo -= 1
 
@@ -528,15 +522,15 @@ while running:
         player.weapon.kd -= 1
     player.players_move()
     player.weapon.update()
-    if player.weapon.bullets != []:
-        for k in player.weapon.bullets:
+    if player.bullets != []:
+        for k in player.bullets:
             k.update()
     if player2.weapon.kd != 0:
         player2.weapon.kd -= 1
     player2.players_move()
     player2.weapon.update()
-    if player2.weapon.bullets != []:
-        for k in player2.weapon.bullets:
+    if player2.bullets != []:
+        for k in player2.bullets:
             k.update()
     if time % 1000 == 0:
         box = BoxWithGun()
