@@ -70,6 +70,7 @@ class Player(pygame.sprite.Sprite):
         self.shoot = False
         self.side = 'Right'
         self.gun = gun
+        self.ammo = -1
         self.velocityx = 0
         self.gravity_velocity = 0.07  # скорость, с которой растет скорость падения
         self.death = 0
@@ -158,23 +159,33 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, box_sprites):
             box = pygame.sprite.spritecollideany(self, box_sprites)
             self.swap_weapon(box)
-    def swap_weapon(self, box):
-        box.dostav = True
-        gun = box.gun
+
+        if self.ammo == 0:
+            self.swap_weapon(gun=False)
+
+    def swap_weapon(self, box=False, gun=True):
         for k in self.weapon.bullets:
             k.bullet.rect.y = -50
             k.bullet.rect.x = 0
             k.bullet.kill()
+        self.weapon.gun.kill()
+        if not gun:
+            self.weapon = Pistol(self)
+        else:
+            gun = box.gun
+        if box != False:
+            box.dostav = True
             self.weapon.gun.kill()
-        if gun == 'mp5':
-            self.weapon = Mp5(self)
-        if gun == 'awp':
-            self.weapon = Snipe(self)
-        if gun == 'ak47':
-            self.weapon = Gun(self)
-        self.gun = gun
-        box.rect.x = 0
-        box.rect.y = -40
+            if gun == 'mp5':
+                self.weapon = Mp5(self)
+            if gun == 'awp':
+                self.weapon = Snipe(self)
+            if gun == 'ak47':
+                self.weapon = Gun(self)
+            self.gun = gun
+            box.rect.x = 0
+            box.rect.y = -40
+        self.ammo = self.weapon.ammo
 
 
 
@@ -197,6 +208,7 @@ class Pistol(pygame.sprite.Sprite):
         self.side = 'Right'
         self.bullets = []
         self.kd = 0
+        self.ammo = -1
         guns_sprites.add(self.gun)
 
     def update(self):
@@ -216,6 +228,7 @@ class Pistol(pygame.sprite.Sprite):
             self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'Pistol')
             self.bullets.append(self.bullet)
             self.kd = 100
+            self.player.ammo -= 1
 
 
 class Gun(pygame.sprite.Sprite):
@@ -228,6 +241,7 @@ class Gun(pygame.sprite.Sprite):
         self.side = 'Right'
         self.bullets = []
         self.kd = 0
+        self.ammo = 15
         guns_sprites.add(self.gun)
 
     def update(self):
@@ -247,6 +261,7 @@ class Gun(pygame.sprite.Sprite):
             self.bullet = Mediumbullet(self.side, self.gun.rect.x, self.gun.rect.y)
             self.bullets.append(self.bullet)
             self.kd = 70
+            self.player.ammo -= 1
 
 
 class Snipe(pygame.sprite.Sprite):
@@ -259,6 +274,7 @@ class Snipe(pygame.sprite.Sprite):
         self.side = 'Right'
         self.bullets = []
         self.kd = 0
+        self.ammo = 5
         guns_sprites.add(self.gun)
 
     def update(self):
@@ -278,6 +294,7 @@ class Snipe(pygame.sprite.Sprite):
             self.bullet = SniperBullet(self.side, self.gun.rect.x, self.gun.rect.y)
             self.bullets.append(self.bullet)
             self.kd = 175
+            self.player.ammo -= 1
 
 
 class Mp5(pygame.sprite.Sprite):
@@ -289,6 +306,7 @@ class Mp5(pygame.sprite.Sprite):
         self.player = player
         self.side = 'Right'
         self.bullets = []
+        self.ammo = 30
         guns_sprites.add(self.gun)
         self.kd = 0
 
@@ -309,6 +327,7 @@ class Mp5(pygame.sprite.Sprite):
             self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'mp5')
             self.bullets.append(self.bullet)
             self.kd = 35
+            self.player.ammo -= 1
 
 class Minibullet(pygame.sprite.Sprite):
     def __init__(self, side, x, y, gun):
