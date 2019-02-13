@@ -18,6 +18,35 @@ def load_image(name, colorkey=None):
     return image
 
 
+def started_menu():
+    fon = pygame.sprite.Sprite()
+    fon.image = pygame.transform.scale(load_image('level_test_fon.jpg'), (1024, 600))
+    fon.rect = fon.image.get_rect()
+    fon.rect.x, fon.rect.y = 0, 0
+    fonov = pygame.sprite.Group()
+    fonov.add(fon)
+    fake = pygame.sprite.Group()
+
+    Buttons(400, 200, 'play_1.png')
+    running = True
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
+                point = Fake(pygame.mouse.get_pos())
+                if pygame.sprite.spritecollideany(point, button_sprites):
+                    button = pygame.sprite.spritecollideany(point, button_sprites)
+                    point.kill()
+                    if button.click() == 'Game':
+                        return
+
+        fonov.draw(screen)
+        button_sprites.draw(screen)
+        pygame.display.flip()
+
+
 def load_level(filename):
     file = open(filename, 'r')
     elements = file.read()
@@ -48,6 +77,8 @@ guns_sprites = pygame.sprite.Group()
 bullet_sprites = pygame.sprite.Group()
 box_sprites = pygame.sprite.Group()
 numbers_sprites = pygame.sprite.Group()
+button_sprites = pygame.sprite.Group()
+fake = pygame.sprite.Group()
 time = 0
 boxes = []
 numbers = [load_image('fortable/0.png'), load_image('fortable/1.png'), load_image('fortable/2.png'),load_image('fortable/3.png'),
@@ -116,7 +147,7 @@ class Player(pygame.sprite.Sprite):
                 self.side = 'Left'
             if pygame.sprite.spritecollideany(self, platform_sprites):  # столкновения с платформами/борадми
                 sprite = pygame.sprite.spritecollideany(self, platform_sprites)
-                if self.rect.y - 120 > sprite.rect.y and self.gravity > 0:  # проверяем, что его ноги ниже выше платформы
+                if self.rect.y - 120 > sprite.rect.y and self.gravity > 0:
                     self.rect.x += 2
         if self.drop:
             self.rect.y += 2
@@ -201,6 +232,31 @@ class Platform(pygame.sprite.Sprite):
         base_platform.rect = base_platform.image.get_rect()
         base_platform.rect.x, base_platform.rect.y = pos
         platform_sprites.add(base_platform)
+
+
+class Buttons(pygame.sprite.Sprite):
+    def __init__(self, x, y, filename):
+        super().__init__(button_sprites)
+        self.but = filename
+        self.name = 'main_window/' + filename
+        self.x, self.y = x, y
+        self.image = pygame.transform.scale(load_image(self.name), (250, 120))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = self.x, self.y
+
+    def click(self):
+        if self.but == 'play_1.png':
+            return 'Game'
+
+
+class Fake(pygame.sprite.Sprite):
+    image = pygame.transform.scale(load_image('main_window/' + 'play_1.png'), (1, 1))
+
+    def __init__(self, pos):
+        super().__init__(fake)
+        self.image = Fake.image
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = pos
 
 
 class Table(pygame.sprite.Sprite):
@@ -563,12 +619,14 @@ class BoxWithGun(pygame.sprite.Sprite):
             self.velo = 0
 
 
+started_menu()
 player = Player(900, 20, 'Pistol', 'Left')  # Pistol, ak47, awp, mp5
 player2 = Player(100, 20, 'Pistol')
 t2 = Table((0, 0), player2, 'table.png')
 t1 = Table((width - 210, 0), player, 'table.png')
 load_level('level1.txt')
 clock = pygame.time.Clock()
+time = 0
 running = True
 while running:
     time += 1
@@ -603,7 +661,7 @@ while running:
             if event.key == pygame.K_LEFT:
                 player.moveleft = False
             if event.key == pygame.K_RIGHT:
-                player.moveright = False
+                 player.moveright = False
             if event.key == pygame.K_m:
                 player.shoot = False
             # Player 2
@@ -644,5 +702,6 @@ while running:
     for k in boxes:
         k.update()
     clock = pygame.time.Clock()
+    if player.lives == 0 or player2.lives == 0:
+        running = False
 
-pygame.quit()
