@@ -50,6 +50,9 @@ box_sprites = pygame.sprite.Group()
 numbers_sprites = pygame.sprite.Group()
 time = 0
 boxes = []
+numbers = [load_image('fortable/0.png'), load_image('fortable/1.png'), load_image('fortable/2.png'),load_image('fortable/3.png'),
+           load_image('fortable/4.png'), load_image('fortable/5.png'), load_image('fortable/6.png'), load_image('fortable/7.png'),
+           load_image('fortable/8.png'), load_image('fortable/9.png'), load_image('fortable/nolimit.png')]
 
 
 class Player(pygame.sprite.Sprite):
@@ -223,22 +226,22 @@ class Table(pygame.sprite.Sprite):
         self.ammo2 = pygame.sprite.Sprite()
 
         if len(str(self.player.ammo)) == 1 and player.ammo != -1:
-            self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+            self.ammo1.image = pygame.transform.scale(numbers[0], (0, 0))
             self.ammo1.rect = self.ammo1.image.get_rect()
-            self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo) + '.png'), (15, 17))
+            self.ammo2.image = pygame.transform.scale(numbers[self.player.ammo], (15, 17))
             self.ammo2.rect = self.ammo2.image.get_rect()
             self.ammo2.rect.x, self.ammo2.rect.y = pos[0] + 185, pos[1] + 30
         elif len(str(self.player.ammo)) == 2 and player.ammo != -1:
-            self.ammo1.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[0] + '.png'), (15, 17))
+            self.ammo1.image = pygame.transform.scale(numbers[int(str(self.player.ammo)[0])], (15, 17))
             self.ammo1.rect = self.ammo1.image.get_rect()
             self.ammo1.rect.x, self.ammo1.rect.y = pos[0] + 165, pos[1] + 30
-            self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[1] + '.png'), (15, 17))
+            self.ammo2.image = pygame.transform.scale(numbers[int(str(self.player.ammo)[1])], (15, 17))
             self.ammo2.rect = self.ammo2.image.get_rect()
             self.ammo2.rect.x, self.ammo2.rect.y = pos[0] + 185, pos[1] + 30
         elif self.player.ammo == -1:
-            self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+            self.ammo1.image = pygame.transform.scale(numbers[1], (0, 0))
             self.ammo1.rect = self.ammo1.image.get_rect()
-            self.ammo2.image = pygame.transform.scale(load_image('fortable/nolimit.png'), (20, 23))
+            self.ammo2.image = pygame.transform.scale(numbers[10], (20, 23))
             self.ammo2.rect = self.ammo2.image.get_rect()
             self.ammo2.rect.x, self.ammo2.rect.y = pos[0] + 165, pos[1] + 25
 
@@ -249,7 +252,7 @@ class Table(pygame.sprite.Sprite):
         self.number = player.lives
         all_sprites.add(table)
         self.lives = pygame.sprite.Sprite()
-        self.lives.image = pygame.transform.scale(load_image('fortable/' + str(self.player.lives) + '.png'), (15, 17))
+        self.lives.image = pygame.transform.scale(numbers[int(str(self.player.lives))], (15, 17))
         self.lives.rect = self.lives.image.get_rect()
         self.lives.rect.x = pos[0] + 170
         self.lives.rect.y = pos[1] + 65
@@ -257,33 +260,31 @@ class Table(pygame.sprite.Sprite):
 
     def update(self):
         if self.number != self.player.lives and self.player.lives >= 0:
-            self.lives.image = pygame.transform.scale(load_image('fortable/' + str(self.player.lives) + '.png'),
-                                                      (15, 17))
+            self.lives.image = pygame.transform.scale(numbers[int(str(self.player.lives))], (15, 17))
             self.lives.rect = self.lives.image.get_rect()
             self.lives.rect.x = self.x + 170
             self.lives.rect.y = self.y + 65
             self.number = self.player.lives
         if self.ammo != self.player.ammo:
             if len(str(abs(self.player.ammo))) == 1 and self.player.ammo >= 0:
-                self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+                self.ammo1.image = pygame.transform.scale(numbers[1], (0, 0))
                 self.ammo1.rect = self.ammo1.image.get_rect()
-                self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo) + '.png'),
-                                                          (15, 17))
+                self.ammo2.image = pygame.transform.scale(numbers[self.player.ammo], (15, 17))
                 self.ammo2.rect = self.ammo2.image.get_rect()
                 self.ammo2.rect.x, self.ammo2.rect.y = self.x + 165, self.y + 30
             elif len(str(abs(self.player.ammo))) == 2:
-                self.ammo1.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[0] + '.png'),
+                self.ammo1.image = pygame.transform.scale(numbers[int(str(self.player.ammo)[0])],
                                                           (15, 17))
                 self.ammo1.rect = self.ammo1.image.get_rect()
                 self.ammo1.rect.x, self.ammo1.rect.y = self.x + 165, self.y + 30
-                self.ammo2.image = pygame.transform.scale(load_image('fortable/' + str(self.player.ammo)[1] + '.png'),
+                self.ammo2.image = pygame.transform.scale(numbers[int(str(self.player.ammo)[1])],
                                                           (15, 17))
                 self.ammo2.rect = self.ammo2.image.get_rect()
                 self.ammo2.rect.x, self.ammo2.rect.y = self.x + 185, self.y + 30
             else:
-                self.ammo1.image = pygame.transform.scale(load_image('fortable/1.png'), (0, 0))
+                self.ammo1.image = pygame.transform.scale(numbers[1], (0, 0))
                 self.ammo1.rect = self.ammo1.image.get_rect()
-                self.ammo2.image = pygame.transform.scale(load_image('fortable/nolimit.png'), (20, 23))
+                self.ammo2.image = pygame.transform.scale(numbers[10], (20, 23))
                 self.ammo2.rect = self.ammo2.image.get_rect()
                 self.ammo2.rect.x, self.ammo2.rect.y = self.x + 165, self.y + 25
             self.ammo = self.player.ammo
@@ -564,8 +565,8 @@ class BoxWithGun(pygame.sprite.Sprite):
 
 player = Player(900, 20, 'Pistol', 'Left')  # Pistol, ak47, awp, mp5
 player2 = Player(100, 20, 'Pistol')
-t1 = Table((0, 0), player2, 'table.png')
-t2 = Table((width - 210, 0), player, 'table.png')
+t2 = Table((0, 0), player2, 'table.png')
+t1 = Table((width - 210, 0), player, 'table.png')
 load_level('level1.txt')
 clock = pygame.time.Clock()
 running = True
@@ -627,7 +628,7 @@ while running:
     if player2.bullets != []:
         for k in player2.bullets:
             k.update()
-    if time % 1000 == 0:
+    if time % 3000 == 0:
         box = BoxWithGun()
         boxes.append(box)
     t1.update()
