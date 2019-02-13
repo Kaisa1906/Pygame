@@ -715,4 +715,5 @@ while running:
         clock = pygame.time.Clock()
         if player.lives == 0 or player2.lives == 0:
             started_menu()
+            break
 
