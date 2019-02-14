@@ -199,14 +199,14 @@ pygame.mixer.init()
 #Music time
 music_for_fight = []
 music_for_menu = []
-music_for_fight.append('data/music/РњРµР»РѕРґРёСЏ 1.wav')
-music_for_menu.append('data/music/РњРµР»РѕРґРёСЏ 9.wav')
-music_for_fight.append('data/music/РњРµР»РѕРґРёСЏ 12.wav')
-music_for_menu.append('data/music/РњРµР»РѕРґРёСЏ 14.wav')
-music_for_fight.append('data/music/РњРµР»РѕРґРёСЏ 15.wav')
-music_for_menu.append('data/music/РњРµР»РѕРґРёСЏ 17.wav')
-music_for_menu.append('data/music/РњРµР»РѕРґРёСЏ 18.wav')
-music_for_menu.append('data/music/РњРµР»РѕРґРёСЏ 19.wav')
+music_for_fight.append('data/music/Мелодия 1.wav')
+music_for_menu.append('data/music/Мелодия 9.wav')
+music_for_fight.append('data/music/Мелодия 12.wav')
+music_for_menu.append('data/music/Мелодия 14.wav')
+music_for_fight.append('data/music/Мелодия 15.wav')
+music_for_menu.append('data/music/Мелодия 17.wav')
+music_for_menu.append('data/music/Мелодия 18.wav')
+music_for_menu.append('data/music/Мелодия 19.wav')
 minibullet = pygame.mixer.Sound('data/music/minibullet.wav')
 pistol = pygame.mixer.Sound('data/music/pistol.wav')
 new_weapon = pygame.mixer.Sound('data/music/new_weapon.wav')
@@ -218,9 +218,9 @@ died = pygame.mixer.Sound('data/music/died.wav')
 
 size = width, height = 1024, 600
 screen = pygame.display.set_mode(size)
-all_sprites = pygame.sprite.Group()  # РІСЃРµ СЃРїСЂР°Р№С‚С‹, РєРѕС‚РѕСЂС‹Рµ СЂРёСЃСѓСЋС‚СЃСЏ РїРµСЂРІС‹Рј РїР»Р°РЅРѕРј, С‚РёРїРѕ РёРіСЂРѕРєРѕРІ, РєРѕСЂРѕР±РѕРє Рё С‚.Рї.
-level_sprites = pygame.sprite.Group()  # С‚СѓС‚ РјРµРЅСЏ С‚РѕР»СЊРєРѕ С„РѕРЅ
-platform_sprites = pygame.sprite.Group()  # РїР»Р°С‚С„РѕСЂРјС‹ РІСЃРµ
+all_sprites = pygame.sprite.Group()  # все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
+level_sprites = pygame.sprite.Group()  # тут меня только фон
+platform_sprites = pygame.sprite.Group()  # платформы все
 guns_sprites = pygame.sprite.Group()
 bullet_sprites = pygame.sprite.Group()
 box_sprites = pygame.sprite.Group()
@@ -236,17 +236,20 @@ numbers = [load_image('fortable/0.png'), load_image('fortable/1.png'), load_imag
 
 
 class Player(pygame.sprite.Sprite):
-    image = load_image("player.png")  # player = РїРµСЂСЃРѕРЅР°Р¶, r = РІРїСЂР°РІРѕ РЅР°РїСЂР°РІР»РµРЅ
 
-    def __init__(self, x, y, gun, side='Right'):
-        super().__init__(players)  # РѕРЅ Сѓ РЅР°СЃ С‚СѓС‚ РІСЂРѕРґРµ РґРѕР±Р°РІР»СЏРµС‚СЃСЏ РІ all_sprites
-        Player.image = pygame.transform.scale(Player.image, (50, 120))  # СЃРґРµР»Р°Р», С‡С‚РѕР±С‹ Р±С‹Р»Рѕ РЅРµ СѓСЂРѕРґР»РёРІРѕ
-        self.image = Player.image
+    def __init__(self, x, y, gun, image, columns, rows, side='Right'):
+        super().__init__(players)
+        self.frames = []
+        self.cut_sheet(load_image(image), columns, rows)
+        self.cur_frame = 0 
+        self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
         self.pos = x, y
         self.rect.x = x
         self.rect.y = y
         self.gravity = 1
+        self.count = 0
+        self.Transformed = False
         self.moveleft = False
         self.moveright = False
         self.jump = False
@@ -260,7 +263,7 @@ class Player(pygame.sprite.Sprite):
         self.ammo = -1
         self.bullets = []
         self.velocityx = 0
-        self.gravity_velocity = 0.07  # СЃРєРѕСЂРѕСЃС‚СЊ, СЃ РєРѕС‚РѕСЂРѕР№ СЂР°СЃС‚РµС‚ СЃРєРѕСЂРѕСЃС‚СЊ РїР°РґРµРЅРёСЏ
+        self.gravity_velocity = 0.07  
         self.lives = 5
         if gun == 'Pistol':
             self.weapon = Pistol(self)
@@ -270,13 +273,26 @@ class Player(pygame.sprite.Sprite):
             self.weapon = Snipe(self)
         elif gun == 'mp5':
             self.weapon = Mp5(self)
-
+            
+    def cut_sheet(self, sheet, columns, rows):
+            self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                    sheet.get_height() // rows)
+            for j in range(rows):
+                for i in range(columns):
+                    frame_location = (self.rect.w * i, self.rect.h * j)
+                    self.frames.append(sheet.subsurface(pygame.Rect(
+                        frame_location, self.rect.size)))
+    
+    def update(self):
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]    
+            
     def players_move(self):
         if self.jump:
             self.rect.y += 1
             if pygame.sprite.spritecollideany(self, platform_sprites):
                 sprite = pygame.sprite.spritecollideany(self, platform_sprites)
-                if self.rect.y + 120 - sprite.rect.y <= 3:  # Сѓ РЅР°СЃ РЅРѕРіРё Р±Р»РёР·РєРё Рє РІРµСЂС…СѓС€РєРё РїР»Р°С‚С„РѕСЂРјС‹
+                if self.rect.y + 120 - sprite.rect.y <= 3:  
                     self.gravity = -5
                     self.rect.y -= 1
             self.rect.y -= 1
@@ -290,13 +306,34 @@ class Player(pygame.sprite.Sprite):
         if self.moveright:
             self.rect.x += 2
             if self.side == 'Left':
+                if self.side == 'Left':
+                    if self.count%10 == 0:
+                        self.update()
+                    self.count = (self.count + 1) % 20                
+                self.Transformed = False
                 self.image = pygame.transform.flip(self.image, True, False)
                 self.side = 'Right'
+            else:
+                if self.count%10 == 0:
+                    self.update()
+                self.count = (self.count + 1) % 20            
         if self.moveleft:
             self.rect.x -= 2
             if self.side == 'Right':
-                self.image = pygame.transform.flip(self.image, True, False)  # РїРµСЂСЃРѕРЅР°Р¶ РЅР°РїСЂР°РІР»РµРЅ РІР»РµРІРѕ
+                if self.count%10 == 0:
+                    self.update()
+                self.count = (self.count + 1) % 20                
+                self.image = pygame.transform.flip(self.image, True, False)
+                self.Transformed = True# РїРµСЂСЃРѕРЅР°Р¶ РЅР°РїСЂР°РІР»РµРЅ РІР»РµРІРѕ
                 self.side = 'Left'
+            else:
+                if self.count%10 == 0:
+                    self.update()
+                    self.Transformed = False
+                if not self.Transformed:
+                    self.image = pygame.transform.flip(self.image, True, False)
+                    self.Transformed = True
+                self.count = (self.count + 1) % 20 
 
         if self.gravity >= 0:
 
@@ -333,15 +370,10 @@ class Player(pygame.sprite.Sprite):
         elif self.velocityx < 0:
             self.velocityx += 0.2
 
-        if self.rect.y > 1000 and not self.die:
-            pygame.mixer.Sound.play(died)
-            self.die = True
-
         if self.rect.y > 1300:
             self.rect.x, self.rect.y = choice(range(900)), self.pos[1]
             self.lives -= 1
-            self.swap_weapon(gun=False, death=True)
-            self.die = False
+            self.swap_weapon(gun=False)
 
         if pygame.sprite.spritecollideany(self, box_sprites):
             box = pygame.sprite.spritecollideany(self, box_sprites)
@@ -351,9 +383,7 @@ class Player(pygame.sprite.Sprite):
             self.swap_weapon(gun=False)
             self.ammo = self.weapon.ammo
 
-    def swap_weapon(self, box=False, gun=True, death=False):
-        if not death:
-            pygame.mixer.Sound.play(new_weapon)
+    def swap_weapon(self, box=False, gun=True):
         self.weapon.gun.kill()
         if not gun:
             self.weapon = Pistol(self)
@@ -378,7 +408,7 @@ class Player(pygame.sprite.Sprite):
 class Platform(pygame.sprite.Sprite):
     def __init__(self, pos, scale, filename):
         base_platform = pygame.sprite.Sprite()
-        base_platform.image = pygame.transform.scale(load_image(filename), scale)  # РїР»Р°С‚С„РѕСЂРјР° Рё РµС‘ СЂР°Р·РјРµСЂС‹
+        base_platform.image = pygame.transform.scale(load_image(filename), scale)  # платформа и её размеры
         base_platform.rect = base_platform.image.get_rect()
         base_platform.rect.x, base_platform.rect.y = pos
         platform_sprites.add(base_platform)
@@ -794,9 +824,9 @@ while running:
     if mus != 'fight':
         pygame.mixer.music.stop()
         music(choice(music_for_fight), 'fight')
-    all_sprites.empty()  # РІСЃРµ СЃРїСЂР°Р№С‚С‹, РєРѕС‚РѕСЂС‹Рµ СЂРёСЃСѓСЋС‚СЃСЏ РїРµСЂРІС‹Рј РїР»Р°РЅРѕРј, С‚РёРїРѕ РёРіСЂРѕРєРѕРІ, РєРѕСЂРѕР±РѕРє Рё С‚.Рї.
-    level_sprites.empty()   # С‚СѓС‚ РјРµРЅСЏ С‚РѕР»СЊРєРѕ С„РѕРЅ
-    platform_sprites.empty()   # РїР»Р°С‚С„РѕСЂРјС‹ РІСЃРµ
+    all_sprites.empty()  # все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
+    level_sprites.empty()   # тут меня только фон
+    platform_sprites.empty()   # платформы все
     guns_sprites.empty()
     bullet_sprites.empty()
     box_sprites.empty()
