@@ -1,0 +1,8 @@
+Background-level4_fon.jpg
+Platform-0 500 100 50 platform1.png
+Platform-150 500 300 50 platform1.png
+Platform-584 500 300 50 platform1.png
+Platform-924 500 100 50 platform1.png
+Platform-634 350 290 70 platform1.png
+Platform-100 350 290 70 platform1.png
+Platform-262 200 500 50 platform1.png
