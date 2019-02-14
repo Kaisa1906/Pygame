@@ -2,6 +2,15 @@ import pygame
 import os
 from random import choice
 
+mus = None
+def music(sound, where):
+    global mus
+    mus = where
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load(sound)
+    pygame.mixer.music.set_volume(0.2)
+    pygame.mixer.music.play(-1)
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -24,6 +33,7 @@ def finaly_menu(l1):
     fon.rect = fon.image.get_rect()
     fon.rect.x, fon.rect.y = 0, 0
     all_sprites.add(fon)
+    guns_sprites.empty()
     won = pygame.sprite.Sprite()
     if l1 == 0:
         won.image = pygame.transform.scale(load_image('player1_won.png'), (400, 80))
@@ -62,9 +72,9 @@ def how_to_play():
     fon.rect.x, fon.rect.y = 0, 0
     level_sprites.add(fon)
     button = pygame.sprite.Sprite()
-    button.image = pygame.transform.scale(load_image('main_window/teach2.png'), (800, 500))
+    button.image = pygame.transform.scale(load_image('main_window/teach.png'), (800, 500))
     button.rect = button.image.get_rect()
-    button.rect.x, button.rect.y = 0, 0
+    button.rect.x, button.rect.y = 100, 50
     buttons2 = pygame.sprite.Group()
     buttons2.add(button)
     run = True
@@ -127,6 +137,8 @@ def started_menu():
     global running
     if not running:
         return
+    if mus != 'menu':
+        music(choice(music_for_menu), 'menu')
     button_sprites.empty()
     fon = pygame.sprite.Sprite()
     fon.image = pygame.transform.scale(load_image('level_test_fon.jpg'), (1024, 600))
@@ -183,6 +195,26 @@ def load_level(filename):
 
 
 pygame.init()
+pygame.mixer.init()
+#Music time
+music_for_fight = []
+music_for_menu = []
+music_for_fight.append('data/music/Мелодия 1.wav')
+music_for_menu.append('data/music/Мелодия 9.wav')
+music_for_fight.append('data/music/Мелодия 12.wav')
+music_for_menu.append('data/music/Мелодия 14.wav')
+music_for_fight.append('data/music/Мелодия 15.wav')
+music_for_menu.append('data/music/Мелодия 17.wav')
+music_for_menu.append('data/music/Мелодия 18.wav')
+music_for_menu.append('data/music/Мелодия 19.wav')
+minibullet = pygame.mixer.Sound('data/music/minibullet.wav')
+pistol = pygame.mixer.Sound('data/music/pistol.wav')
+new_weapon = pygame.mixer.Sound('data/music/new_weapon.wav')
+gun = pygame.mixer.Sound('data/music/sniper.wav')
+sniper = pygame.mixer.Sound('data/music/gun.wav')
+
+
+
 size = width, height = 1024, 600
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()  # все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
@@ -302,7 +334,7 @@ class Player(pygame.sprite.Sprite):
         if self.rect.y > 1300:
             self.rect.x, self.rect.y = choice(range(900)), self.pos[1]
             self.lives -= 1
-            self.swap_weapon(gun=False)
+            self.swap_weapon(gun=False, death=True)
 
         if pygame.sprite.spritecollideany(self, box_sprites):
             box = pygame.sprite.spritecollideany(self, box_sprites)
@@ -312,7 +344,9 @@ class Player(pygame.sprite.Sprite):
             self.swap_weapon(gun=False)
             self.ammo = self.weapon.ammo
 
-    def swap_weapon(self, box=False, gun=True):
+    def swap_weapon(self, box=False, gun=True, death=False):
+        if not death:
+            pygame.mixer.Sound.play(new_weapon)
         self.weapon.gun.kill()
         if not gun:
             self.weapon = Pistol(self)
@@ -495,6 +529,7 @@ class Pistol(pygame.sprite.Sprite):
 
     def shot(self):
         if self.kd == 0:
+            pygame.mixer.Sound.play(pistol)
             self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'Pistol')
             self.player.bullets.append(self.bullet)
             self.kd = 100
@@ -526,6 +561,7 @@ class Gun(pygame.sprite.Sprite):
 
     def shot(self):
         if self.kd == 0:
+            pygame.mixer.Sound.play(gun)
             self.bullet = Mediumbullet(self.side, self.gun.rect.x, self.gun.rect.y)
             self.player.bullets.append(self.bullet)
             self.kd = 60
@@ -558,6 +594,7 @@ class Snipe(pygame.sprite.Sprite):
 
     def shot(self):
         if self.kd == 0:
+            pygame.mixer.Sound.play(sniper)
             self.bullet = SniperBullet(self.side, self.gun.rect.x, self.gun.rect.y)
             self.player.bullets.append(self.bullet)
             self.kd = 175
@@ -592,6 +629,7 @@ class Mp5(pygame.sprite.Sprite):
         if self.kd == 0:
             self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'mp5')
             self.player.bullets.append(self.bullet)
+            pygame.mixer.Sound.play(minibullet)
             self.kd = 35
             self.player.ammo -= 1
 
@@ -746,6 +784,9 @@ filename = started_menu()
 
 
 while running:
+    if mus != 'fight':
+        pygame.mixer.music.stop()
+        music(choice(music_for_fight), 'fight')
     all_sprites.empty()  # все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
     level_sprites.empty()   # тут меня только фон
     platform_sprites.empty()   # платформы все
