@@ -8,7 +8,7 @@ def music(sound, where):
     mus = where
     pygame.mixer.music.stop()
     pygame.mixer.music.load(sound)
-    pygame.mixer.music.set_volume(0.2)
+    pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(-1)
 
 
@@ -212,6 +212,7 @@ pistol = pygame.mixer.Sound('data/music/pistol.wav')
 new_weapon = pygame.mixer.Sound('data/music/new_weapon.wav')
 gun = pygame.mixer.Sound('data/music/sniper.wav')
 sniper = pygame.mixer.Sound('data/music/gun.wav')
+died = pygame.mixer.Sound('data/music/died.wav')
 
 
 
@@ -251,6 +252,7 @@ class Player(pygame.sprite.Sprite):
         self.jump = False
         self.drop = False
         self.shoot = False
+        self.die = False
         self.side = side
         if self.side == 'Left':
             self.image = pygame.transform.flip(self.image, True, False)
@@ -331,10 +333,15 @@ class Player(pygame.sprite.Sprite):
         elif self.velocityx < 0:
             self.velocityx += 0.2
 
+        if self.rect.y > 1000 and not self.die:
+            pygame.mixer.Sound.play(died)
+            self.die = True
+
         if self.rect.y > 1300:
             self.rect.x, self.rect.y = choice(range(900)), self.pos[1]
             self.lives -= 1
             self.swap_weapon(gun=False, death=True)
+            self.die = False
 
         if pygame.sprite.spritecollideany(self, box_sprites):
             box = pygame.sprite.spritecollideany(self, box_sprites)
