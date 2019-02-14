@@ -966,7 +966,7 @@ while running:
         t2 = Table((0, 0), player2, 'table.png')
         t1 = Table((width - 210, 0), player, 'table.png')
     filename = filename.split('.')[0]
-    load_level(filename + '.txt')
+    load_level('data/' + filename + '.txt')
     time = 0
     while running:
         time += 1
