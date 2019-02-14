@@ -17,8 +17,77 @@ def load_image(name, colorkey=None):
         image.set_colorkey(colorkey)
     return image
 
+def chose_level():
+    Maps(200, 50, 'level1.png')
+    Maps(200, 225, 'level2.png')
+    Maps(200, 400, 'level3.png')
+    fon = pygame.sprite.Sprite()
+    fon.image = pygame.transform.scale(load_image('level_test_fon.jpg'), (1024, 600))
+    fon.rect = fon.image.get_rect()
+    fon.rect.x, fon.rect.y = 0, 0
+    level_sprites.add(fon)
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                break
+            if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
+                point = Fake(pygame.mouse.get_pos())
+                if pygame.sprite.spritecollideany(point, maps_sprites):
+                    map = pygame.sprite.spritecollideany(point, maps_sprites)
+                    point.kill()
+                    name = map.clicked()
+                    return name
+
+        level_sprites.draw(screen)
+        maps_sprites.draw(screen)
+        pygame.display.flip()
+    return
+
+
+def finaly_menu(l1):
+    global running
+    fon = pygame.sprite.Sprite()
+    fon.image = pygame.transform.scale(load_image('temn.png'), (1024, 600))
+    fon.rect = fon.image.get_rect()
+    fon.rect.x, fon.rect.y = 0, 0
+    all_sprites.add(fon)
+    won = pygame.sprite.Sprite()
+    if l1 == 0:
+        won.image = pygame.transform.scale(load_image('player2_won.png'), (400, 80))
+    else:
+        won.image = pygame.transform.scale(load_image('player1_won.png'), (400, 80))
+    won.rect = won.image.get_rect()
+    won.rect.x, won.rect.y = 300, 200
+    lish.add(won)
+    running = True
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                break
+            if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
+                started_menu()
+
+        level_sprites.draw(screen)
+        platform_sprites.draw(screen)
+        all_sprites.draw(screen)
+        bullet_sprites.draw(screen)
+        box_sprites.draw(screen)
+        numbers_sprites.draw(screen)
+        guns_sprites.draw(screen)
+        all_sprites.draw(screen)
+        lish.draw(screen)
+        pygame.display.flip()
+    return
+
+
+
 
 def started_menu():
+    global running
     fon = pygame.sprite.Sprite()
     fon.image = pygame.transform.scale(load_image('level_test_fon.jpg'), (1024, 600))
     fon.rect = fon.image.get_rect()
@@ -41,7 +110,7 @@ def started_menu():
                     button = pygame.sprite.spritecollideany(point, button_sprites)
                     point.kill()
                     if button.click() == 'Game':
-                        return
+                        return chose_level()
 
         fonov.draw(screen)
         button_sprites.draw(screen)
@@ -81,6 +150,8 @@ box_sprites = pygame.sprite.Group()
 numbers_sprites = pygame.sprite.Group()
 button_sprites = pygame.sprite.Group()
 fake = pygame.sprite.Group()
+maps_sprites = pygame.sprite.Group()
+lish = pygame.sprite.Group()
 numbers = [load_image('fortable/0.png'), load_image('fortable/1.png'), load_image('fortable/2.png'),load_image('fortable/3.png'),
            load_image('fortable/4.png'), load_image('fortable/5.png'), load_image('fortable/6.png'), load_image('fortable/7.png'),
            load_image('fortable/8.png'), load_image('fortable/9.png'), load_image('fortable/nolimit.png')]
@@ -226,6 +297,18 @@ class Platform(pygame.sprite.Sprite):
         base_platform.rect.x, base_platform.rect.y = pos
         platform_sprites.add(base_platform)
 
+
+class Maps(pygame.sprite.Sprite):
+    def __init__(self, x, y, filename):
+        super().__init__(maps_sprites)
+        self.filename = filename
+        self.image = pygame.transform.scale(load_image(filename), (300, 150))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def clicked(self):
+        return self.filename
 
 class Buttons(pygame.sprite.Sprite):
     def __init__(self, x, y, filename):
@@ -611,10 +694,10 @@ class BoxWithGun(pygame.sprite.Sprite):
         if self.rect.x == 0:
             self.velo = 0
 
-
-started_menu()
-
 running = True
+filename = started_menu()
+
+
 while running:
     all_sprites.empty()  # все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
     level_sprites.empty()   # тут меня только фон
@@ -630,7 +713,8 @@ while running:
     player2 = Player(100, 20, 'Pistol')
     t2 = Table((0, 0), player2, 'table.png')
     t1 = Table((width - 210, 0), player, 'table.png')
-    load_level('level4.txt')
+    filename = filename.split('.')[0]
+    load_level(filename + '.txt')
     time = 0
     while running:
         time += 1
@@ -662,7 +746,7 @@ while running:
                     player2.moveleft = True
                 if event.key == pygame.K_s:
                     player2.drop = True
-                if event.key == pygame.K_g:
+                if event.key == pygame.K_q:
                     player2.shoot = True
             if event.type == pygame.KEYUP:
                 # Player 1
@@ -677,7 +761,7 @@ while running:
                     player2.moveleft = False
                 if event.key == pygame.K_d:
                     player2.moveright = False
-                if event.key == pygame.K_g:
+                if event.key == pygame.K_q:
                     player2.shoot = False
 
         if player.weapon.kd != 0:
@@ -702,15 +786,17 @@ while running:
         level_sprites.draw(screen)
         platform_sprites.draw(screen)
         all_sprites.draw(screen)
-        guns_sprites.draw(screen)
         bullet_sprites.draw(screen)
         box_sprites.draw(screen)
         numbers_sprites.draw(screen)
+        all_sprites.draw(screen)
+        guns_sprites.draw(screen)
         pygame.display.flip()
         for k in boxes:
             k.update()
         clock = pygame.time.Clock()
         if player.lives == 0 or player2.lives == 0:
-            started_menu()
+            finaly_menu(player.lives)
+            filename = started_menu()
             break
 
