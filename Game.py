@@ -54,14 +54,46 @@ def finaly_menu(l1):
         pygame.display.flip()
 
 
+def how_to_play():
+    global running
+    fon = pygame.sprite.Sprite()
+    fon.image = pygame.transform.scale(load_image('level_test_fon.jpg'), (1024, 600))
+    fon.rect = fon.image.get_rect()
+    fon.rect.x, fon.rect.y = 0, 0
+    level_sprites.add(fon)
+    button = pygame.sprite.Sprite()
+    button.image = pygame.transform.scale(load_image('main_window/teach2.png'), (800, 500))
+    button.rect = button.image.get_rect()
+    button.rect.x, button.rect.y = 0, 0
+    buttons2 = pygame.sprite.Group()
+    buttons2.add(button)
+    run = True
+
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                run = False
+                break
+            if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                run = False
+        level_sprites.draw(screen)
+        buttons2.draw(screen)
+        pygame.display.flip()
+    return started_menu()
+
+
+
 def chose_level():
     global running
     Maps(200, 50, 'level1.png')
     Maps(200, 225, 'level2.png')
     Maps(200, 400, 'level3.png')
     level_sprites.empty()
+    button_sprites.empty()
     fon = pygame.sprite.Sprite()
     fon.image = pygame.transform.scale(load_image('level_test_fon.jpg'), (1024, 600))
+    Buttons(800, 50, 'back.png', 'back', (70,70))
     fon.rect = fon.image.get_rect()
     fon.rect.x, fon.rect.y = 0, 0
     level_sprites.add(fon)
@@ -79,13 +111,23 @@ def chose_level():
                     point.kill()
                     name = map.clicked()
                     return name
+                if pygame.sprite.spritecollideany(point, button_sprites):
+                    button = pygame.sprite.spritecollideany(point, button_sprites)
+                    need = button.click()
+                    if need == 'back':
+                        return started_menu()
 
         level_sprites.draw(screen)
+        button_sprites.draw(screen)
         maps_sprites.draw(screen)
         pygame.display.flip()
     return
 
 def started_menu():
+    global running
+    if not running:
+        return
+    button_sprites.empty()
     fon = pygame.sprite.Sprite()
     fon.image = pygame.transform.scale(load_image('level_test_fon.jpg'), (1024, 600))
     fon.rect = fon.image.get_rect()
@@ -94,12 +136,14 @@ def started_menu():
     fonov.add(fon)
     fake = pygame.sprite.Group()
 
-    Buttons(400, 200, 'play_1.png')
-    running = True
+    Buttons(400, 200, 'play_1.png', "Game")
+    Buttons(375, 400, 'how_to_play.png', "how_to_play", (300, 75))
+    run = True
 
-    while running:
+    while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                run = False
                 running = False
                 break
             if event.type == pygame.MOUSEBUTTONDOWN and pygame.mouse.get_pressed()[0]:
@@ -109,6 +153,8 @@ def started_menu():
                     point.kill()
                     if button.click() == 'Game':
                         return chose_level()
+                    elif button.click() == 'how_to_play':
+                        return how_to_play()
 
         fonov.draw(screen)
         button_sprites.draw(screen)
@@ -298,18 +344,20 @@ class Platform(pygame.sprite.Sprite):
 
 
 class Buttons(pygame.sprite.Sprite):
-    def __init__(self, x, y, filename):
+    def __init__(self, x, y, filename, purpose, scale=False):
         super().__init__(button_sprites)
         self.but = filename
+        self.purpose = purpose
         self.name = 'main_window/' + filename
         self.x, self.y = x, y
-        self.image = pygame.transform.scale(load_image(self.name), (250, 120))
+        if not scale:
+            scale = (250, 120)
+        self.image = pygame.transform.scale(load_image(self.name), scale)
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.x, self.y
 
     def click(self):
-        if self.but == 'play_1.png':
-            return 'Game'
+            return self.purpose
 
 
 class Maps(pygame.sprite.Sprite):
@@ -693,10 +741,10 @@ class BoxWithGun(pygame.sprite.Sprite):
         if self.rect.x == 0:
             self.velo = 0
 
-
+running = True
 filename = started_menu()
 
-running = True
+
 while running:
     all_sprites.empty()  # все спрайты, которые рисуются первым планом, типо игроков, коробок и т.п.
     level_sprites.empty()   # тут меня только фон
