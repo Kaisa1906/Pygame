@@ -1,4 +1,4 @@
-import pygame
+﻿import pygame
 import os
 from random import choice
 
@@ -204,7 +204,6 @@ music_for_fight = []
 music_for_menu = []
 music_for_fight.append('data/music/1.wav')
 music_for_menu.append('data/music/9.wav')
-music_for_fight.append('data/music/12.wav')
 music_for_menu.append('data/music/14.wav')
 music_for_fight.append('data/music/15.wav')
 music_for_menu.append('data/music/17.wav')
@@ -231,7 +230,8 @@ fake = pygame.sprite.Group()
 maps_sprites = pygame.sprite.Group()
 lish = pygame.sprite.Group()
 icons = pygame.sprite.Group()
-players = pygame.sprite.Group()
+players1 = pygame.sprite.Group()
+players2 = pygame.sprite.Group()
 numbers = [load_image('fortable/0.png'), load_image('fortable/1.png'), load_image('fortable/2.png'),
            load_image('fortable/3.png'),
            load_image('fortable/4.png'), load_image('fortable/5.png'), load_image('fortable/6.png'),
@@ -241,8 +241,12 @@ numbers = [load_image('fortable/0.png'), load_image('fortable/1.png'), load_imag
 
 class Player(pygame.sprite.Sprite):
 
-    def __init__(self, x, y, gun, image, columns, rows, side='Right'):
-        super().__init__(players)
+    def __init__(self, x, y, gun, image, columns, rows, pl, side='Right'):
+        if pl == 'player1':
+            super().__init__(players1)
+        else:
+            super().__init__(players2)
+        self.pl = pl
         self.frames = []
         self.respawn = 600
         self.cut_sheet(load_image(image), columns, rows)
@@ -590,7 +594,7 @@ class Pistol(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             pygame.mixer.Sound.play(pistol)
-            self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'Pistol')
+            self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'Pistol', self.player.pl)
             self.player.bullets.append(self.bullet)
             self.kd = 100
 
@@ -622,7 +626,7 @@ class Gun(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             pygame.mixer.Sound.play(gun)
-            self.bullet = Mediumbullet(self.side, self.gun.rect.x, self.gun.rect.y)
+            self.bullet = Mediumbullet(self.side, self.gun.rect.x, self.gun.rect.y,  self.player.pl)
             self.player.bullets.append(self.bullet)
             self.kd = 60
             self.player.ammo -= 1
@@ -655,7 +659,7 @@ class Snipe(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             pygame.mixer.Sound.play(sniper)
-            self.bullet = SniperBullet(self.side, self.gun.rect.x, self.gun.rect.y)
+            self.bullet = SniperBullet(self.side, self.gun.rect.x, self.gun.rect.y, self.player.pl)
             self.player.bullets.append(self.bullet)
             self.kd = 175
             self.player.ammo -= 1
@@ -687,7 +691,7 @@ class Mp5(pygame.sprite.Sprite):
 
     def shot(self):
         if self.kd == 0:
-            self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'mp5')
+            self.bullet = Minibullet(self.side, self.gun.rect.x, self.gun.rect.y, 'mp5', self.player.pl)
             self.player.bullets.append(self.bullet)
             pygame.mixer.Sound.play(minibullet)
             self.kd = 35
@@ -720,9 +724,9 @@ class ShotGun(pygame.sprite.Sprite):
     def shot(self):
         if self.kd == 0:
             pygame.mixer.Sound.play(sniper)
-            self.bullet1 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y, 10)
-            self.bullet2 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y)
-            self.bullet3 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y, -10)
+            self.bullet1 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y,self.player.pl, 10)
+            self.bullet2 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y, self.player.pl)
+            self.bullet3 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y, self.player.pl, 10)
             self.player.bullets.append(self.bullet1)
             self.player.bullets.append(self.bullet2)
             self.player.bullets.append(self.bullet3)
@@ -730,9 +734,10 @@ class ShotGun(pygame.sprite.Sprite):
             self.player.ammo -= 1
 
 class Minibullet(pygame.sprite.Sprite):
-    def __init__(self, side, x, y, gun):
+    def __init__(self, side, x, y, gun, pl):
         super().__init__(bullet_sprites)
         self.side = side
+        self.pl = pl
         self.image = pygame.transform.scale(load_image('guns/Minibullet.png'), (20, 5))
         if side == 'Left':
             self.image = pygame.transform.flip(self.image, True, False)
@@ -750,6 +755,10 @@ class Minibullet(pygame.sprite.Sprite):
             self.streight = 12
         else:
             self.streight = 10
+        if self.pl == 'player1':
+            self.grop = players2
+        else:
+            self.grop = players1
 
     def update(self):
         if self.side == 'Right':
@@ -764,8 +773,8 @@ class Minibullet(pygame.sprite.Sprite):
             self.velocity = 0
             self.rect.x = 0
             self.rect.y = -100
-        if pygame.sprite.spritecollideany(self, players):
-            hero = pygame.sprite.spritecollideany(self, players)
+        if pygame.sprite.spritecollideany(self, self.grop):
+            hero = pygame.sprite.spritecollideany(self, self.grop)
             if self.side == 'Right' and hero.respawn == 0:
                 hero.velocityx -= self.streight
             elif hero.respawn == 0:
@@ -777,9 +786,10 @@ class Minibullet(pygame.sprite.Sprite):
 
 
 class Mediumbullet(pygame.sprite.Sprite):
-    def __init__(self, side, x, y):
+    def __init__(self, side, x, y, pl):
         super().__init__(bullet_sprites)
         self.side = side
+        self.pl = pl
         self.image = pygame.transform.scale(load_image('guns/MediumBullet.png'), (25, 6))
         if side == 'Left':
             self.image = pygame.transform.flip(self.image, True, False)
@@ -790,6 +800,10 @@ class Mediumbullet(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = x - 5, y
         self.velocity = 5
         self.streight = 13
+        if self.pl == 'player1':
+            self.grop = players2
+        else:
+            self.grop = players1
 
     def update(self):
         if self.side == 'Right':
@@ -804,8 +818,8 @@ class Mediumbullet(pygame.sprite.Sprite):
             self.velocity = 0
             self.rect.x = 0
             self.rect.y = -100
-        if pygame.sprite.spritecollideany(self, players):
-            hero = pygame.sprite.spritecollideany(self, players)
+        if pygame.sprite.spritecollideany(self, self.grop):
+            hero = pygame.sprite.spritecollideany(self, self.grop)
             if self.side == 'Right' and hero.respawn == 0:
                 hero.velocityx -= self.streight
             elif hero.respawn == 0:
@@ -817,9 +831,10 @@ class Mediumbullet(pygame.sprite.Sprite):
 
 
 class SniperBullet(pygame.sprite.Sprite):
-    def __init__(self, side, x, y):
+    def __init__(self, side, x, y, pl):
         super().__init__(bullet_sprites)
         self.side = side
+        self.pl = pl
         self.image = pygame.transform.scale(load_image('guns/SniperBullet.png'), (30, 7))
         if side == 'Left':
             self.image = pygame.transform.flip(self.image, True, False)
@@ -831,6 +846,11 @@ class SniperBullet(pygame.sprite.Sprite):
         self.velocity = 10
         bullet_sprites.add(self)
         self.streight = 16
+        if self.pl == 'player1':
+            self.grop = players2
+        else:
+            self.grop = players1
+
 
     def update(self):
         if self.side == 'Right':
@@ -845,8 +865,8 @@ class SniperBullet(pygame.sprite.Sprite):
             self.velocity = 0
             self.rect.x = 0
             self.rect.y = -100
-        if pygame.sprite.spritecollideany(self, players):
-            hero = pygame.sprite.spritecollideany(self, players)
+        if pygame.sprite.spritecollideany(self, self.grop):
+            hero = pygame.sprite.spritecollideany(self, self.grop)
             if self.side == 'Right' and hero.respawn == 0:
                 hero.velocityx -= self.streight
             elif hero.respawn == 0:
@@ -857,10 +877,11 @@ class SniperBullet(pygame.sprite.Sprite):
             self.kill()
 
 class ShotGunBullet(pygame.sprite.Sprite):
-    def __init__(self, side, x, y, rot=0):
+    def __init__(self, side, x, y, pl, rot=0):
         super().__init__(bullet_sprites)
         self.side = side
         self.rot = rot
+        self.pl = pl
         self.image = pygame.transform.scale(load_image('guns/MediumBullet.png'), (25, 6))
         if side == 'Left':
             self.image = pygame.transform.flip(self.image, True, False)
@@ -873,6 +894,10 @@ class ShotGunBullet(pygame.sprite.Sprite):
         self.velocity = 5
         bullet_sprites.add(self)
         self.streight = 5
+        if self.pl == 'player1':
+            self.grop = players2
+        else:
+            self.grop = players1
 
     def update(self):
         if self.side == 'Right':
@@ -898,8 +923,8 @@ class ShotGunBullet(pygame.sprite.Sprite):
             self.rect.x = 0
             self.rot = 0
             self.rect.y = -100
-        if pygame.sprite.spritecollideany(self, players):
-            hero = pygame.sprite.spritecollideany(self, players)
+        if pygame.sprite.spritecollideany(self, self.grop):
+            hero = pygame.sprite.spritecollideany(self, self.grop)
             if self.side == 'Right' and hero.respawn == 0:
                 hero.velocityx -= self.streight
             elif hero.respawn == 0:
@@ -943,7 +968,8 @@ while running:
     box_sprites.empty()
     numbers_sprites.empty()
     button_sprites.empty()
-    players.empty()
+    players1.empty()
+    players2.empty()
     fake.empty()
     icons.empty()
     icon1 = pygame.sprite.Sprite()
@@ -957,8 +983,8 @@ while running:
     icon2.rect.x, icon2.rect.y = width - 190, 20
     icons.add(icon2)
     boxes = []
-    player = Player(900, 20, 'Pistol', 'player1.png', 4, 1, side='Left')  # Pistol, ak47, awp, mp5
-    player2 = Player(100, 20, 'Pistol', 'player2.png', 2, 1)
+    player = Player(900, 20, 'Pistol', 'player1.png', 4, 1, 'player1', side='Left')  # Pistol, ak47, awp, mp5
+    player2 = Player(100, 20, 'Pistol', 'player2.png', 2, 1, 'player2')
     if filename == 'level3.png':
         t2 = Table((0, 0), player2, 'table1.png')
         t1 = Table((width - 210, 0), player, 'table1.png')
@@ -1042,7 +1068,8 @@ while running:
         box_sprites.draw(screen)
         numbers_sprites.draw(screen)
         icons.draw(screen)
-        players.draw(screen)
+        players1.draw(screen)
+        players2.draw(screen)
         guns_sprites.draw(screen)
         pygame.display.flip()
         for k in boxes:
