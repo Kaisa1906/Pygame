@@ -1,4 +1,4 @@
-﻿import pygame
+import pygame
 import os
 from random import choice
 
@@ -10,7 +10,7 @@ def music(sound, where):
     mus = where
     pygame.mixer.music.stop()
     pygame.mixer.music.load(sound)
-    pygame.mixer.music.set_volume(0.1)
+    pygame.mixer.music.set_volume(0)
     pygame.mixer.music.play(-1)
 
 
@@ -726,7 +726,7 @@ class ShotGun(pygame.sprite.Sprite):
             pygame.mixer.Sound.play(sniper)
             self.bullet1 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y,self.player.pl, 10)
             self.bullet2 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y, self.player.pl)
-            self.bullet3 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y, self.player.pl, 10)
+            self.bullet3 = ShotGunBullet(self.side, self.gun.rect.x, self.gun.rect.y, self.player.pl, -10)
             self.player.bullets.append(self.bullet1)
             self.player.bullets.append(self.bullet2)
             self.player.bullets.append(self.bullet3)
